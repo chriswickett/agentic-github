@@ -68,6 +68,6 @@ jobs:
           PR number: $PR_NUMBER
           CTX_EOF
 
-          cat /tmp/context.txt | claude --stream \
+          cat /tmp/context.txt | claude --p \
             --allowedTools "Read" "Edit" "Write" "Glob" "Grep" \
             "DRY RUN: This is a test prompt. Please just tell me what the weather in Cardiff is and also what the review body is."
