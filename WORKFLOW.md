@@ -156,6 +156,43 @@ For frontend work, GClaude can spin up a dev server and use Chrome DevTools to:
 
 This only happens when the plan involves UI work. The GitHub Actions runner has Chrome pre-installed. GClaude starts it in headless mode and connects via the Chrome DevTools MCP.
 
+## Bot Identity
+
+All autonomous git/gh operations use `bin/git-bot`, a wrapper script that sets the bot's identity via environment variables. This ensures commits, PRs, and comments are attributed to your machine account, not your personal GitHub account.
+
+### Setting up a GitHub machine account
+
+1. Create a new GitHub account for your bot (e.g. `yourname-bot`)
+2. Add the bot account as a collaborator on your repos (with write access)
+3. On the bot account, generate a fine-grained Personal Access Token (PAT):
+   - Settings → Developer settings → Personal access tokens → Fine-grained tokens
+   - Repository access: **All repositories** (covers any repo the bot is added to in the future)
+   - Permissions:
+     - **Contents**: Read and write (for git push)
+     - **Pull requests**: Read and write (for creating/commenting/merging PRs)
+     - **Metadata**: Read (auto-selected)
+4. Note the bot's noreply email from https://github.com/settings/emails — it looks like `ID+username@users.noreply.github.com`
+
+### Environment variables
+
+`git-bot` requires three env vars:
+
+| Variable | Value |
+|---|---|
+| `AGENTIC_BOT_NAME` | The bot's GitHub username (e.g. `yourname-bot`) |
+| `AGENTIC_BOT_EMAIL` | The bot's noreply email (e.g. `ID+yourname-bot@users.noreply.github.com`) |
+| `GH_TOKEN` | The bot's PAT |
+
+**Locally**, set these in your shell profile or a `.env` file:
+
+```bash
+export AGENTIC_BOT_NAME="yourname-bot"
+export AGENTIC_BOT_EMAIL="123456+yourname-bot@users.noreply.github.com"
+export GH_TOKEN="ghp_..."
+```
+
+**In GitHub Actions**, add `AGENTIC_BOT_TOKEN` as a repo/org secret, and `AGENTIC_BOT_NAME` / `AGENTIC_BOT_EMAIL` as repo/org variables (Settings → Secrets and variables → Actions).
+
 ## Repo Setup
 
 Before using this workflow with a client repo:
@@ -168,9 +205,13 @@ Before using this workflow with a client repo:
 
 4. **Add secrets**: At repo level (Settings → Secrets and variables → Actions) or org level:
    - `ANTHROPIC_API_KEY`: For Claude CLI
-   - `SKILLS_REPO_PAT`: Personal access token to clone your private skills repo
+   - `AGENTIC_BOT_TOKEN`: The bot account's PAT
 
-5. **Create plans directory**: Create an empty `./plans/` directory.
+5. **Add variables**: At repo level (Settings → Secrets and variables → Actions → Variables) or org level:
+   - `AGENTIC_BOT_NAME`: The bot's GitHub username
+   - `AGENTIC_BOT_EMAIL`: The bot's noreply email
+
+6. **Create plans directory**: Create an empty `./plans/` directory.
 
 ## The Reusable Workflow
 

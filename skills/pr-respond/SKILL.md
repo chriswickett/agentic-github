@@ -15,6 +15,10 @@ You are running in a GitHub Actions VM. The repo is checked out at the PR branch
 
 ## Process
 
+### 0. Configure bot identity
+
+All git and gh commands in this skill must use `git-bot` (located at `bin/git-bot` in the skills repo). Use `git-bot git ...` instead of `git ...` and `git-bot gh ...` instead of `gh ...`.
+
 ### 1. Gather context
 
 Use `gh` to get the review details:

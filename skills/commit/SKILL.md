@@ -9,6 +9,12 @@ description: Create atomic git commits following the three-pass methodology.
 
 `/commit`
 
+## Bot identity
+
+If you are operating autonomously (e.g. called by pr-start, pr-fix, or pr-respond), use `git-bot git ...` (located at `bin/git-bot` in the skills repo) instead of bare `git` for all git commands. This ensures commits are attributed to the bot account, not the human.
+
+If you are operating interactively with a human (e.g. `/commit`), use bare `git` as normal, unless asked to commit as the bot.
+
 ## Process
 
 Read `./atomic-git-commits.md` in this skill's directory for the full reference. Then follow these steps.

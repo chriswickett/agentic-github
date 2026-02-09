@@ -11,6 +11,10 @@ You are called by pr-respond. The review comments, PR metadata, and repo are alr
 
 ## Process
 
+### 0. Configure bot identity
+
+All git and gh commands in this skill must use `git-bot` (located at `bin/git-bot` in the skills repo). Use `git-bot git ...` instead of `git ...` and `git-bot gh ...` instead of `gh ...`.
+
 ### 1. Understand the feedback
 
 Read the review comments - both the summary and any line-by-line comments. Understand what the reviewer is asking for.

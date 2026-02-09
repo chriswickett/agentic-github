@@ -11,6 +11,10 @@ You are called by pr-respond. The PR metadata and repo are already available in 
 
 ## Process
 
+### 0. Configure bot identity
+
+All git and gh commands in this skill must use `git-bot` (located at `bin/git-bot` in the skills repo). Use `git-bot git ...` instead of `git ...` and `git-bot gh ...` instead of `gh ...`.
+
 ### 1. Gather context
 
 Read `./plans/progress.txt` and all commit messages on this branch to understand the full journey - initial implementation and any rejection cycles.
