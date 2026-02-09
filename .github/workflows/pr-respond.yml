@@ -30,7 +30,7 @@ jobs:
 
       - name: Run pr-respond
         run: |
-          claude -p "Read /tmp/skills/skills/pr-respond/SKILL.md and follow its instructions. The review state is: $REVIEW_STATE. The review body is: $REVIEW_BODY. The PR number is: $PR_NUMBER."
+          claude -p --verbose "Read /tmp/skills/skills/pr-respond/SKILL.md and follow its instructions. The review state is: $REVIEW_STATE. The review body is: $REVIEW_BODY. The PR number is: $PR_NUMBER."
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
