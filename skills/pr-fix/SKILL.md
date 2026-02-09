@@ -7,13 +7,23 @@ description: Fixes code based on PR review feedback. Called by pr-respond when c
 
 ## Context
 
-You are called by pr-respond. The review comments, PR metadata, and repo are already available in context.
+You are called by pr-respond. The review comments, PR metadata, and repo are already available in context. You are sandboxed to file tools only (Read, Edit, Write, Glob, Grep). Do not attempt to use Bash, git, or gh.
+
+## Output
+
+Return structured JSON via pr-respond's schema:
+
+```json
+{
+  "commit_message": "fix: Address review feedback\n\nplan: {plan-filename.md}",
+  "pr_comment": "Fixed the requested changes: ...",
+  "back_off": false
+}
+```
+
+The first line of the commit message body (after the subject line and blank line) must be `plan: {plan-filename.md}`. Follow the atomic commit conventions from `../../commit/SKILL.md` for the message format.
 
 ## Process
-
-### 0. Configure bot identity
-
-All git and gh commands in this skill must use `git-bot` (located at `bin/git-bot` in the skills repo). Use `git-bot git ...` instead of `git ...` and `git-bot gh ...` instead of `gh ...`.
 
 ### 1. Understand the feedback
 
@@ -21,7 +31,7 @@ Read the review comments - both the summary and any line-by-line comments. Under
 
 ### 2. Find the plan
 
-Parse the commit history for `plan: {filename.md}` in a commit body. Read that plan from `./plans/`.
+Parse the commit history (provided in context) for `plan: {filename.md}` in a commit body. Read that plan from `./plans/`.
 
 ### 3. Read progress.txt
 
@@ -41,12 +51,6 @@ Review feedback: "{summary of what was requested}"
 Action taken: {what you did to fix it}
 ```
 
-### 6. Commit and push
+### 6. Return JSON
 
-Read `../../commit/SKILL.md` and follow its process for committing. Ignore any steps that require user input. The first line of the commit body (after the subject line and blank line) must be `plan: {plan-filename.md}`.
-
-Push the commit.
-
-### 7. Comment on the PR
-
-Use `gh pr comment` to post a concise paragraph on the PR explaining what you fixed. Keep it short - the reviewer can look at the diff for details.
+Set `commit_message` to a clean commit message describing the fix. Set `pr_comment` to a concise paragraph explaining what you fixed. Set `back_off` to `false`. The workflow handles committing, pushing, and commenting.
