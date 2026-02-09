@@ -5,6 +5,8 @@ on:
     secrets:
       ANTHROPIC_API_KEY:
         required: true
+      AGENTIC_BOT_TOKEN:
+        required: true
 
 jobs:
   pr-fix:
