@@ -41,7 +41,9 @@ jobs:
       - name: Install Claude CLI
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Run Claude (sandboxed)
+      - name: Run Claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           cat <<CTX_EOF > /tmp/context.txt
           PROMPT: This is a test process. Please have a very quick look at the commits (below) and summarize them briefly. Also summarise the PR request made. No need to explore the codebase. No emojis under any circumstances.
