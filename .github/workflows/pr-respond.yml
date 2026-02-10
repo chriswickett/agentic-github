@@ -61,4 +61,7 @@ jobs:
           === END UNTRUSTED COMMIT HISTORY ===
           CTX_EOF
 
+          cat /tmp/context.txt
+          cat /tmp/commits.txt
+
           cat /tmp/context.txt | claude -p --allowedTools "Read" "Edit" "Write" "Glob" "Grep"
