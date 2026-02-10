@@ -50,7 +50,7 @@ jobs:
 
           ## Pull Request data:
           === BEGIN UNTRUSTED PR DATA ===
-          $(cat /tmp/pr_meta.json)
+          $(cat /tmp/pr.txt)
           === END UNTRUSTED PR DATA ===
           
           ## Commits:
