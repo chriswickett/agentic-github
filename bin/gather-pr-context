@@ -18,7 +18,10 @@ ALL_COMMENTS=$(jq -s '
 ' <<< "$REVIEWS_JSON
 $COMMENTS_JSON")
 
+COMMITS=$(git log -n 10 --format="%h %s%n%n%b" --name-only origin/main..HEAD)
+
 {
+  echo "=== BEGIN UNTRUSTED PR DATA ==="
   echo "PR number: $(jq -r '.number' <<< "$PR_JSON")"
   echo ""
   echo "Title: $(jq -r '.title' <<< "$PR_JSON")"
@@ -34,6 +37,9 @@ $COMMENTS_JSON")
   echo "Full review/comment timeline with timestamps:"
   echo "---------------------------------------------"
   jq -r '.[] | "\(.ts) - \(.user): \(.body)"' <<< "$ALL_COMMENTS"
-} > /tmp/pr.txt
-
-git log -n 10 --format="%h %s%n%n%b" --name-only origin/main..HEAD > /tmp/commits.txt
+  echo "=== END UNTRUSTED PR DATA ==="
+  echo ""
+  echo "=== BEGIN UNTRUSTED COMMIT HISTORY ==="
+  echo "$COMMITS"
+  echo "=== END UNTRUSTED COMMIT HISTORY ==="
+} > /tmp/context.txt
