@@ -15,6 +15,8 @@ PR metadata, review comments, and commit history are provided in your prompt.
 
 **Cost constraint**: Every tool call costs money. Do not explore the codebase broadly. Only read files that are directly referenced in the review comments, the plan, or progress.txt. Do not use Glob or Grep to survey the codebase. Do not create plans or spawn agents.
 
+**Logging**: Before each tool call, output a concise one-line explanation of what you're about to do and why.
+
 ## Process
 
 ### 1. Understand the feedback

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+jq -s -r '
+  (last | .total_cost_usd // 0) as $total_cost |
+  ([.[] | select(.type != "system" and .type != "result")] |
+  map(
+    if .type=="assistant" and .message.content then
+      (.message.usage | "\(.input_tokens)in/\(.output_tokens)out") as $tokens |
+      [.message.content[] |
+        if .type=="text" then
+          .text
+        elif .type=="tool_use" then
+          (.name + ": " + (.input.file_path // .input.command // .input.pattern // ""))
+        else
+          empty
+        end
+      ] | map(. + "  [\($tokens)]") | .[]
+    elif .type=="user" and .message.content then
+      [.message.content[] |
+        if .type=="tool_result" then
+          "(success)"
+        else
+          empty
+        end
+      ] | .[]
+    else
+      empty
+    end
+  ) | join("\n")),
+  (if $total_cost > 0 then
+    "\nTotal cost: $\($total_cost | . * 100 | round / 100)"
+  else
+    empty
+  end)
+'
