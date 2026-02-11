@@ -17,6 +17,11 @@ PR metadata, review comments, and commit history are provided in your prompt.
 
 **Logging**: Before each tool call, output a concise one-line explanation of what you're about to do and why.
 
+**Validation**: After making changes, verify they work:
+1. Start dev server: `(npm run dev > /tmp/dev-server.log 2>&1 &); for i in $(seq 1 30); do if curl -s http://localhost:3000 > /dev/null 2>&1; then echo "Server ready"; break; fi; sleep 1; done`
+2. Read `/tmp/dev-server.log` to check for errors
+3. If errors appear, fix them before writing output files
+
 ## Process
 
 ### 1. Understand the feedback
