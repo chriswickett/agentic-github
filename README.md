@@ -197,12 +197,12 @@ Before using this workflow with a client repo:
      pr-respond:
        uses: chriswickett/agentic/.github/workflows/pr-respond.yml@main
        secrets:
-         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+         CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
          AGENTIC_BOT_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
    ```
 
 4. **Add secrets**: At repo level (Settings → Secrets and variables → Actions) or org level:
-   - `ANTHROPIC_API_KEY`: For Claude CLI
+   - `CLAUDE_CODE_OAUTH_TOKEN`: OAuth token from `claude setup-token` (uses your Claude Pro/Max subscription)
    - `AGENTIC_BOT_TOKEN`: The bot account's PAT
 
 5. **Add variables**: At repo level (Settings → Secrets and variables → Actions → Variables) or org level:

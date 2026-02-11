@@ -4,7 +4,10 @@ jq -s -r '
   ([.[] | select(.type != "system" and .type != "result")] |
   map(
     if .type=="assistant" and .message.content then
-      (.message.usage | "\(.input_tokens)in/\(.output_tokens)out") as $tokens |
+      (.message.usage |
+        ((.input_tokens // 0) + (.cache_read_input_tokens // 0) + (.cache_creation_input_tokens // 0)) as $total_in |
+        "\($total_in)in/\(.output_tokens)out  cache:\(.cache_read_input_tokens // 0)r/\(.cache_creation_input_tokens // 0)w"
+      ) as $tokens |
       [.message.content[] |
         if .type=="text" then
           .text
