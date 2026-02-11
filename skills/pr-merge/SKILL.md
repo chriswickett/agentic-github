@@ -5,10 +5,6 @@ description: Writes a clean squash-merge commit message for an approved PR. Call
 
 # pr-merge
 
-## Trigger
-
-Called by the pr-merge job in GitHub Actions after pr-triage has returned CONTINUE.
-
 ## Context
 
 You are running in a GitHub Actions VM. The repo is checked out at the PR branch. You have access to Read and Write tools only. Do not attempt to use Bash, git, or gh. The workflow handles the actual merge after you finish.

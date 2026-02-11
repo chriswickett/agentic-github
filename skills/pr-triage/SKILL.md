@@ -5,10 +5,6 @@ description: Classifies PR review intent as back-off or continue.
 
 # pr-triage
 
-## Trigger
-
-Called by GitHub Actions when a `pull_request_review` event fires, before pr-fix or pr-merge.
-
 ## Context
 
 You are running in a GitHub Actions VM. The workflow provides the full PR context (review body, comment timeline, commits) in your prompt. Your only job is to classify intent.

@@ -7,18 +7,29 @@ REPO="$2"
 PR_JSON=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json number,title,body,headRefName)
 REVIEWS_JSON=$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews")
 COMMENTS_JSON=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments")
+LINE_COMMENTS_JSON=$(gh api "repos/$REPO/pulls/$PR_NUMBER/comments")
 
-LATEST_CHANGES_REQUESTED=$(jq -r '[.[] | select(.state=="CHANGES_REQUESTED")] | last | .body' <<< "$REVIEWS_JSON")
+LATEST_REVIEW=$(jq '[.[] | select(.state=="CHANGES_REQUESTED")] | last' <<< "$REVIEWS_JSON")
+
+if jq -e 'type == "object"' <<< "$LATEST_REVIEW" > /dev/null 2>&1; then
+  LATEST_CHANGES_REQUESTED=$(jq -r '.body' <<< "$LATEST_REVIEW")
+  LATEST_REVIEW_ID=$(jq -r '.id' <<< "$LATEST_REVIEW")
+else
+  LATEST_CHANGES_REQUESTED="(none)"
+  LATEST_REVIEW_ID=""
+fi
+
+RECENT_REVIEW_IDS=$(jq '[sort_by(.submitted_at) | reverse | .[1:5] | .[].id]' <<< "$REVIEWS_JSON")
 
 ALL_COMMENTS=$(jq -s '
   [
     (.[0][]? | {ts: .submitted_at, user: .user.login, body: .body}),
     (.[1][]? | {ts: .created_at, user: .user.login, body: .body})
-  ] | sort_by(.ts)
+  ] | sort_by(.ts) | reverse
 ' <<< "$REVIEWS_JSON
 $COMMENTS_JSON")
 
-COMMITS=$(git log -n 10 --format="%h %s%n%n%b" --name-only origin/main..HEAD)
+COMMITS=$(git log -n 10 --format="%h %s%n%n%b" --name-only origin/main..HEAD | awk 'NR>1 && /^[0-9a-f]+ /{print "----"} {print}')
 
 {
   echo "=== BEGIN UNTRUSTED PR DATA ==="
@@ -34,9 +45,26 @@ COMMITS=$(git log -n 10 --format="%h %s%n%n%b" --name-only origin/main..HEAD)
   echo "--------------------------------------"
   echo "$LATEST_CHANGES_REQUESTED"
   echo ""
-  echo "Full review/comment timeline with timestamps:"
-  echo "---------------------------------------------"
-  jq -r '.[] | "\(.ts) - \(.user): \(.body)"' <<< "$ALL_COMMENTS"
+  echo "Current review line comments:"
+  echo "-----------------------------"
+  if [[ -n "$LATEST_REVIEW_ID" ]]; then
+    jq -r --argjson rid "$LATEST_REVIEW_ID" '.[] | select(.pull_request_review_id == $rid) | "\(.path):\(.line // .original_line // "general") - \(.user.login): \(.body)"' <<< "$LINE_COMMENTS_JSON"
+  else
+    echo "(none)"
+  fi
+  echo ""
+  echo "Past line comments:"
+  echo "--------------------"
+  if [[ -n "$LATEST_REVIEW_ID" ]]; then
+    PAST=$(jq -r --argjson rid "$LATEST_REVIEW_ID" --argjson rids "$RECENT_REVIEW_IDS" '.[] | select(.pull_request_review_id != $rid and (.pull_request_review_id as $id | $rids | index($id))) | "\(.path):\(.line // .original_line // "general") - \(.user.login): \(.body)"' <<< "$LINE_COMMENTS_JSON")
+    echo "${PAST:-(none)}"
+  else
+    echo "(none)"
+  fi
+  echo ""
+  echo "Last 5 reviews and comments:"
+  echo "----------------------------"
+  jq -r '.[:5][] | "\(.ts) - \(.user): \(.body)"' <<< "$ALL_COMMENTS"
   echo "=== END UNTRUSTED PR DATA ==="
   echo ""
   echo "=== BEGIN UNTRUSTED COMMIT HISTORY ==="

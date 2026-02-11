@@ -43,7 +43,7 @@ Summary: {brief description of what was implemented}
 
 ### 6. Commit
 
-Read `../../commit/SKILL.md` and follow its process for committing. Ignore any steps that require user input - you are making decisions autonomously here. The first line of the commit body (after the subject line and blank line) must be `plan: {plan-filename.md}`.
+Read `../commit/SKILL.md` and follow its process for committing. Ignore any steps that require user input - you are making decisions autonomously here. The first line of the commit body (after the subject line and blank line) must be `plan: {plan-filename.md}`.
 
 ### 7. Push and open PR
 

@@ -35,19 +35,19 @@ You (or a reviewer) review the PR
        ↓
 GClaude triages the review
        ↓
-Back-off signal detected?
-    GClaude comments "stepping back" and stops
-       ↓
-Changes requested?
-    GClaude fixes the code
-    GClaude commits and pushes
-    Back to review
-       ↓
-Approved?
-    GClaude writes clean commit message
-    GClaude squash-merges the PR
-       ↓
-Done
+  ┌─── Back-off signal? ───┐
+  │                         │
+  YES                       NO
+  │                         │
+  GClaude comments          ├── Changes requested?
+  "stepping back"           │   GClaude fixes the code
+  Done                      │   GClaude commits and pushes
+                            │   ↑ Back to review
+                            │
+                            └── Approved?
+                                GClaude writes clean commit message
+                                GClaude squash-merges the PR
+                                Done
 ```
 
 ## Step by Step

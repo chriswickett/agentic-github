@@ -65,7 +65,7 @@ jobs:
 
   pr-fix:
     needs: pr-triage
-    if: github.event.review.state == 'changes_requested' && needs.pr-triage.outputs.decision != 'STOP'
+    if: github.event.review.state == 'changes_requested' && needs.pr-triage.outputs.decision == 'CONTINUE'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -75,17 +75,17 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Download context artefacts
-        uses: actions/download-artifact@v4
-        with:
-          name: pr-context
-          path: /tmp
-
       - name: Clone skills repo
         run: git clone https://github.com/chriswickett/agentic.git /tmp/skills
 
       - name: Install Claude CLI
         run: npm install -g @anthropic-ai/claude-code
+
+      - name: Download context artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-context
+          path: /tmp
 
       - name: Configure Chrome DevTools MCP
         run: |
@@ -107,6 +107,10 @@ jobs:
           AGENTIC_BOT_NAME: ${{ vars.AGENTIC_BOT_NAME }}
           AGENTIC_BOT_EMAIL: ${{ vars.AGENTIC_BOT_EMAIL }}
         run: |
+          if [[ ! -f /tmp/commit_msg.txt || ! -f /tmp/pr_comment.txt ]]; then
+            echo "::error::Claude did not produce required output files"
+            exit 1
+          fi
           git config user.name "$AGENTIC_BOT_NAME"
           git config user.email "$AGENTIC_BOT_EMAIL"
           git add -A
@@ -116,7 +120,7 @@ jobs:
 
   pr-merge:
     needs: pr-triage
-    if: github.event.review.state == 'approved' && needs.pr-triage.outputs.decision != 'STOP'
+    if: github.event.review.state == 'approved' && needs.pr-triage.outputs.decision == 'CONTINUE'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -126,17 +130,17 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Download context artefacts
-        uses: actions/download-artifact@v4
-        with:
-          name: pr-context
-          path: /tmp
-
       - name: Clone skills repo
         run: git clone https://github.com/chriswickett/agentic.git /tmp/skills
 
       - name: Install Claude CLI
         run: npm install -g @anthropic-ai/claude-code
+
+      - name: Download context artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-context
+          path: /tmp
 
       - name: Merge with Claude
         env:
@@ -152,6 +156,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
         run: |
+          if [[ ! -f /tmp/commit_msg.txt ]]; then
+            echo "::error::Claude did not produce /tmp/commit_msg.txt"
+            exit 1
+          fi
           SUBJECT=$(head -1 /tmp/commit_msg.txt)
           BODY=$(tail -n +3 /tmp/commit_msg.txt)
           gh pr merge "${{ github.event.pull_request.number }}" --squash --subject "$SUBJECT" --body "$BODY"
