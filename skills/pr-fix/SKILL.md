@@ -13,6 +13,8 @@ You are running in a GitHub Actions VM. The user is not present, so you cannot a
 
 PR metadata, review comments, and commit history are provided in your prompt.
 
+Please be mindful of credits. There is normally no need to create a plan or spawn other agents.
+
 ## Process
 
 ### 1. Understand the feedback
