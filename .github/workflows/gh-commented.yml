@@ -10,7 +10,7 @@ on:
 
 jobs:
   gh-respond:
-    if: startsWith(github.event.comment.body, '@claude')
+    if: startsWith(github.event.comment.body || github.event.issue.body, '@claude')
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -20,7 +20,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
         run: |
-          if [[ -n "${{ github.event.issue.pull_request.url || '' }}" ]]; then
+          if [[ -n "${{ github.event.issue.pull_request.url }}" ]]; then
             echo "ref=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName -q .headRefName)" >> "$GITHUB_OUTPUT"
             echo "is_pr=true" >> "$GITHUB_OUTPUT"
           else
