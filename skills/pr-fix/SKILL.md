@@ -13,9 +13,7 @@ You are running in a GitHub Actions VM. The user is not present, so you cannot a
 
 PR metadata, review comments, and commit history are provided in your prompt.
 
-**Cost constraint**: Every tool call costs money. Do not explore the codebase broadly. Only read files that are directly referenced in the review comments, the plan, or progress.txt. Do not use Glob or Grep to survey the codebase. Do not create plans or spawn agents.
-
-**Logging**: Before each tool call, output a concise one-line explanation of what you're about to do and why.
+**Cost constraint**: Do not create plans or spawn agents.
 
 **Validation**: After making changes, verify they work:
 1. Start dev server with this exact command: `(npm run dev > /tmp/dev-server.log 2>&1 &); for i in $(seq 1 30); do if curl -s http://localhost:3000 > /dev/null 2>&1; then echo "Server ready"; break; fi; sleep 1; done`
@@ -50,7 +48,7 @@ Append to `./plans/progress.txt`:
 ```
 ## Rejection {n} - {timestamp}
 Review feedback: "{summary of what was requested}"
-Action taken: {what you did to fix it}
+Action taken: {Write a summary what you changed and (very, very briefly) why. Do not write about your journey to get there, write about the outcome}
 ```
 
 ### 5. Clean up
@@ -62,6 +60,6 @@ Delete any temporary files you created during this session — screenshots, test
 Write these files:
 
 - `/tmp/commit_msg.txt` — a single commit message for all your changes. Follow the conventions in the commit skill at `../commit/SKILL.md`. The first line of the commit body (after the subject and blank line) must be `plan: {plan-filename.md}`.
-- `/tmp/pr_comment.txt` — a concise paragraph explaining what you fixed, for the PR comment thread.
+- `/tmp/pr_comment.txt` — a very concise paragraph explaining what you fixed, for the PR comment thread.
 
 The workflow will commit, push, and comment using these files.
