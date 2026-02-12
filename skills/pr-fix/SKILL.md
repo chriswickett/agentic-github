@@ -82,3 +82,7 @@ If you need to start a server or a process, you must ONLY start it with the back
 4. When done, stop the process: `/tmp/skills/bin/bg-stop <pidfile>` using the PIDFILE path from step 1
 
 Do not use any other process or workflow for starting processes or reading the log file, even if the above fails. Follow THESE instructions only.
+
+### Dependencies
+
+You can add new dependencies if you absolutely must or there is a real benefit. Check which package manager the repo already uses (look for lockfiles) and use that. Do not switch package managers.
