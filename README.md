@@ -8,6 +8,7 @@ Reusable Claude Code skills and GitHub Actions workflows for automated PR lifecy
 - **do-work** — executes plans
 - **pr-start** — creates branch, executes plan, commits, and opens a PR
 - **pr-fix** — fixes code based on reviewer feedback
+- **pr-respond** — answers questions and responds to PR comments
 - **pr-merge** — writes clean commit message for squash-merging approved PRs
 - **commit** — atomic git commit conventions
 
@@ -19,7 +20,7 @@ A system where an AI agent handles the full PR lifecycle. All interactions requi
 
 - **You** (human): Write plans, trigger initial work, review PRs, approve or reject
 - **Claude** (local): Runs on your machine. Creates plans, executes work, opens PRs
-- **GClaude** (GitHub Actions): Runs in GitHub's cloud on PR events. Fixes or merges
+- **GClaude** (GitHub Actions): Runs in GitHub's cloud on PR events. Fixes, responds, or merges
 
 ## The Loop
 
@@ -59,7 +60,7 @@ You run `/pr-start`. Claude asks which plan to execute, creates a branch, then d
 
 ### 3. Review (GitHub, human)
 
-A human reviews the PR. To trigger the bot, start the review body with `@claude`. Without `@claude`, nothing happens — the bot only responds when addressed directly.
+A human reviews the PR. To trigger the bot, start a review or comment with `@claude`. Without `@claude`, nothing happens — the bot only responds when addressed directly.
 
 ### 4. pr-fix (GitHub Actions, GClaude)
 
@@ -75,7 +76,17 @@ Runs when a review with `changes_requested` starts with `@claude`:
 
 The loop returns to the review step.
 
-### 5. pr-merge (coming soon)
+### 5. pr-respond (GitHub Actions, GClaude)
+
+Runs when a PR comment starts with `@claude`:
+
+1. Checks out the repo at the PR branch
+2. Runs `gather-pr-context` to collect PR data, reviews, comments, and commit history into `context.txt`
+3. Runs Claude with the pr-respond skill
+4. Claude reads the comment, explores the codebase as needed, and writes a response
+5. The workflow posts the response as a PR comment
+
+### 6. pr-merge (coming soon)
 
 Auto-merge on approval is being extracted into its own workflow (`pr-approved.yml`). When complete, approving a PR with `@claude` will trigger Claude to write a clean squash-merge commit message and merge automatically.
 
@@ -184,4 +195,5 @@ Before using this workflow with a client repo:
 ## TODO
 
 - Harden and expand the allowed commands list in `bin/bg`
+- Setup script to generate client repo workflow files from agentic
 
