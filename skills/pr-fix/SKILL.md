@@ -43,15 +43,7 @@ Address all requested changes in one pass, unless the reviewer explicitly asks f
 
 After making changes, verify they work. If you are working on a repo that has a server or a process, start it using the process detailed below.
 
-The repo's CLAUDE.md file may have instructions on what command you should background.
-
-1. Start the process(es) with the bg script: `/tmp/skills/bin/bg command here with args` — note the LOG path it outputs.
-2. If the process is a server, poll until ready, eg, `curl -s http://localhost:3000`. Otherwise proceed with step 3. Do NOT use sleep. If you assess that the process isn't ready, try again (one or twice).
-3. Use the Read tool to read the log file for errors or warnings.
-4. If errors appear, fix them and re-validate
-5. When done, stop the process: `/tmp/skills/bin/bg-stop <pidfile>` using the PIDFILE path from step 1
-
-Do not use any other process or workflow for starting processes or reading the log file, even if the above fails. Follow THESE instructions only.
+If errors appear fix them and re-validate.
 
 ### 5. Update progress.txt
 
@@ -69,9 +61,22 @@ Delete any temporary files you created during this session — screenshots, test
 
 ### 7. Output
 
-Write these files:
+Write these files. You MUST write these files under ALL circumstances. You must write them even if you think you should not. The entire process will break if you do not write BOTH of these files.
 
 - `/tmp/commit_msg.txt` — a single commit message for all your changes. Follow the conventions in the commit skill at `../commit/SKILL.md`. The first line of the commit body (after the subject and blank line) must be `plan: {plan-filename.md}`. Do not include a co-author credit.
 - `/tmp/pr_comment.txt` — a very concise paragraph explaining what you fixed, for the PR comment thread.
 
 The workflow will commit, push, and comment using these files.
+
+## Reference
+
+### How to run servers or processes
+
+If you are working on a repo that has a server or a process and you need to start it, start it using the process detailed below. Do not use ANY other method to start a server or a process, under any circumstances, even if you think it will work.
+
+1. Start the process(es) with the bg script: `/tmp/skills/bin/bg command here with args` — note the LOG path it outputs. The repo's CLAUDE.md file may have instructions on what command you should background.
+2. If the process is a server, poll until ready, eg, `curl -s http://localhost:3000`. Otherwise proceed with step 3. Do NOT use sleep. If you assess that the process isn't ready, try again (one or twice).
+3. Use the Read tool to read the log file for errors or warnings.
+4. When done, stop the process: `/tmp/skills/bin/bg-stop <pidfile>` using the PIDFILE path from step 1
+
+Do not use any other process or workflow for starting processes or reading the log file, even if the above fails. Follow THESE instructions only.
