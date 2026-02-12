@@ -33,21 +33,20 @@ Claude commits and opens a PR
        ↓
 You (or a reviewer) review the PR
        ↓
-GClaude triages the review
+  ┌─── Changes requested? ───┐
+  │                            │
+  YES                          NO
+  │                            │
+  GClaude triages              Approved?
+  the review                   (pr-merge coming soon)
        ↓
-  ┌─── Back-off signal? ───┐
-  │                         │
-  YES                       NO
-  │                         │
-  GClaude comments          ├── Changes requested?
-  "stepping back"           │   GClaude fixes the code
-  Done                      │   GClaude commits and pushes
-                            │   ↑ Back to review
-                            │
-                            └── Approved?
-                                GClaude writes clean commit message
-                                GClaude squash-merges the PR
-                                Done
+  ┌─── STOP or CONTINUE? ───┐
+  │                           │
+  STOP                     CONTINUE
+  │                           │
+  GClaude comments          GClaude fixes the code
+  "stepping back"           GClaude commits and pushes
+  Done                      ↑ Back to review
 ```
 
 ## Step by Step
@@ -76,14 +75,14 @@ A human reviews the PR. The reviewer can either:
 
 ### 4. pr-triage (GitHub Actions, GClaude)
 
-Any review event triggers the reusable workflow. The first job is triage:
+When a reviewer requests changes, the reusable workflow runs triage first:
 
 1. Checks out the repo at the PR branch
 2. Clones the skills repo
 3. Runs `gather-pr-context` to collect PR data, reviews, comments, and commit history into a single `context.txt`
 4. Runs Claude with the pr-triage skill to classify intent as STOP or CONTINUE
 5. If STOP: comments "Understood — stepping back from this PR." and no further jobs run
-6. If CONTINUE: uploads `context.txt` as an artefact for downstream jobs
+6. If CONTINUE: uploads `context.txt` as an artefact for the pr-fix job
 
 ### 5. pr-fix (GitHub Actions, GClaude)
 
@@ -98,16 +97,9 @@ Runs when `changes_requested` and triage returned CONTINUE:
 
 The loop returns to the review step.
 
-### 6. pr-merge (GitHub Actions, GClaude)
+### 6. pr-merge (coming soon)
 
-Runs when `approved` and triage returned CONTINUE:
-
-1. Downloads the context artefact from triage
-2. Runs Claude with the pr-merge skill
-3. Claude reads progress.txt and commit history, writes a clean commit message
-4. The workflow squash-merges the PR with that message
-
-The messy history of fix commits disappears. Main gets one clean commit.
+Auto-merge on approval is being extracted into its own workflow (`pr-approved.yml`). When complete, approving a PR will trigger Claude to write a clean squash-merge commit message and merge automatically.
 
 ## progress.txt
 
