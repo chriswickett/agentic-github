@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+allowed=(npm pnpm next node rails)
+
+cmd="$1"
+shift || true
+
+cmd_name=$(basename "$cmd")
+if [[ ! " ${allowed[*]} " =~ " ${cmd_name} " ]]; then
+  echo "Not allowed: $cmd_name" >&2
+  exit 1
+fi
+
+log="/tmp/bg-$(basename "$cmd")-$$.log"
+pidfile="$log.pid"
+
+"$cmd" "$@" >"$log" 2>&1 &
+pid=$!
+
+echo "$pid" >"$pidfile"
+echo "PID=$pid"
+echo "LOG=$log"
+echo "PIDFILE=$pidfile"

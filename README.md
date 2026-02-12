@@ -211,3 +211,7 @@ Before using this workflow with a client repo:
 
 6. **Create plans directory**: Create an empty `./plans/` directory.
 
+## TODO
+
+- Harden and expand the allowed commands list in `bin/bg`
+

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pidfile="$1"
+
+if [[ ! -f "$pidfile" ]]; then
+  echo "No pidfile found: $pidfile" >&2
+  exit 1
+fi
+
+pid=$(cat "$pidfile")
+
+if kill -0 "$pid" 2>/dev/null; then
+  kill "$pid"
+  echo "Stopped $pid"
+else
+  echo "Process $pid not running"
+fi
+
+rm -f "$pidfile"
