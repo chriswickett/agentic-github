@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ISSUE_NUMBER="$1"
+REPO="$2"
+
+ISSUE_JSON=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json number,title,body,labels)
+COMMENTS_JSON=$(gh api "repos/$REPO/issues/$ISSUE_NUMBER/comments" --paginate)
+
+{
+  echo "=== BEGIN UNTRUSTED ISSUE DATA ==="
+  echo "Issue number: $(jq -r '.number' <<< "$ISSUE_JSON")"
+  echo ""
+  echo "Title: $(jq -r '.title' <<< "$ISSUE_JSON")"
+  echo ""
+  echo "Labels: $(jq -r '[.labels[].name] | join(", ")' <<< "$ISSUE_JSON")"
+  echo ""
+  echo "Issue body:"
+  echo "-----------"
+  jq -r '.body' <<< "$ISSUE_JSON"
+  echo ""
+  echo "Comments:"
+  echo "---------"
+  jq -r '.[] | "\(.created_at) - \(.user.login): \(.body)"' <<< "$COMMENTS_JSON"
+  echo "=== END UNTRUSTED ISSUE DATA ==="
+} > /tmp/context.txt

@@ -8,7 +8,7 @@ Reusable Claude Code skills and GitHub Actions workflows for automated PR lifecy
 - **do-work** — executes plans
 - **pr-start** — creates branch, executes plan, commits, and opens a PR
 - **pr-fix** — fixes code based on reviewer feedback
-- **pr-respond** — answers questions and responds to PR comments
+- **gh-respond** — answers questions and responds to PR or issue comments
 - **pr-merge** — writes clean commit message for squash-merging approved PRs
 - **commit** — atomic git commit conventions
 
@@ -76,15 +76,15 @@ Runs when a review with `changes_requested` starts with `@claude`:
 
 The loop returns to the review step.
 
-### 5. pr-respond (GitHub Actions, GClaude)
+### 5. gh-respond (GitHub Actions, GClaude)
 
-Runs when a PR comment starts with `@claude`:
+Runs when a PR or issue comment starts with `@claude`:
 
-1. Checks out the repo at the PR branch
-2. Runs `gather-pr-context` to collect PR data, reviews, comments, and commit history into `context.txt`
-3. Runs Claude with the pr-respond skill
+1. Checks out the repo (PR branch for PRs, main for issues)
+2. Gathers context (PR context or issue context depending on source)
+3. Runs Claude with the gh-respond skill
 4. Claude reads the comment, explores the codebase as needed, and writes a response
-5. The workflow posts the response as a PR comment
+5. The workflow posts the response as a comment
 
 ### 6. pr-merge (GitHub Actions, GClaude)
 
@@ -205,15 +205,17 @@ Before using this workflow with a client repo:
          AGENTIC_BOT_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
    ```
 
-   `pr-commented.yml`:
+   `gh-commented.yml`:
    ```yaml
    on:
      issue_comment:
        types: [created]
+     issues:
+       types: [opened]
 
    jobs:
-     pr-commented:
-       uses: chriswickett/agentic/.github/workflows/pr-commented.yml@main
+     gh-commented:
+       uses: chriswickett/agentic/.github/workflows/gh-commented.yml@main
        secrets:
          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
          AGENTIC_BOT_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
