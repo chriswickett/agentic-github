@@ -7,20 +7,19 @@ Reusable Claude Code skills and GitHub Actions workflows for automated PR lifecy
 - **plan-work** — creates plans through structured conversation
 - **do-work** — executes plans
 - **pr-start** — creates branch, executes plan, commits, and opens a PR
-- **pr-triage** — classifies PR review intent as STOP or CONTINUE
 - **pr-fix** — fixes code based on reviewer feedback
 - **pr-merge** — writes clean commit message for squash-merging approved PRs
 - **commit** — atomic git commit conventions
 
 ## PR Workflow
 
-A system where an AI agent handles the full PR lifecycle. When a reviewer requests changes, the AI reads the feedback, fixes the code, and pushes for re-review. When approved, the AI writes a clean commit message and merges. At any point, a reviewer can tell the AI to back off and it will step away.
+A system where an AI agent handles the full PR lifecycle. All interactions require addressing the bot with `@claude` at the start of a review or comment. When a reviewer requests changes, the AI reads the feedback, fixes the code, and pushes for re-review. When approved, the AI writes a clean commit message and merges.
 
 ## The Players
 
 - **You** (human): Write plans, trigger initial work, review PRs, approve or reject
 - **Claude** (local): Runs on your machine. Creates plans, executes work, opens PRs
-- **GClaude** (GitHub Actions): Runs in GitHub's cloud on PR events. Triages, fixes, or merges
+- **GClaude** (GitHub Actions): Runs in GitHub's cloud on PR events. Fixes or merges
 
 ## The Loop
 
@@ -31,22 +30,15 @@ Claude executes it locally
        ↓
 Claude commits and opens a PR
        ↓
-You (or a reviewer) review the PR
+You review the PR
        ↓
-  ┌─── Changes requested? ───┐
-  │                            │
-  YES                          NO
-  │                            │
-  GClaude triages              Approved?
-  the review                   (pr-merge coming soon)
+@claude + request changes?
        ↓
-  ┌─── STOP or CONTINUE? ───┐
-  │                           │
-  STOP                     CONTINUE
-  │                           │
-  GClaude comments          GClaude fixes the code
-  "stepping back"           GClaude commits and pushes
-  Done                      ↑ Back to review
+GClaude fixes, writes commit msg + PR comment
+       ↓
+Workflow commits, pushes, and posts comment
+       ↓
+Back to review
 ```
 
 ## Step by Step
@@ -67,39 +59,25 @@ You run `/pr-start`. Claude asks which plan to execute, creates a branch, then d
 
 ### 3. Review (GitHub, human)
 
-A human reviews the PR. The reviewer can either:
+A human reviews the PR. To trigger the bot, start the review body with `@claude`. Without `@claude`, nothing happens — the bot only responds when addressed directly.
 
-- Request changes (with specific feedback)
-- Approve
-- Tell the AI to stop (e.g. "I'll fix this myself", "no more AI", "@someone can you pick this up")
+### 4. pr-fix (GitHub Actions, GClaude)
 
-### 4. pr-triage (GitHub Actions, GClaude)
-
-When a reviewer requests changes, the reusable workflow runs triage first:
+Runs when a review with `changes_requested` starts with `@claude`:
 
 1. Checks out the repo at the PR branch
-2. Clones the skills repo
-3. Runs `gather-pr-context` to collect PR data, reviews, comments, and commit history into a single `context.txt`
-4. Runs Claude with the pr-triage skill to classify intent as STOP or CONTINUE
-5. If STOP: comments "Understood — stepping back from this PR." and no further jobs run
-6. If CONTINUE: uploads `context.txt` as an artefact for the pr-fix job
-
-### 5. pr-fix (GitHub Actions, GClaude)
-
-Runs when `changes_requested` and triage returned CONTINUE:
-
-1. Downloads the context artefact from triage
-2. Runs Claude with the pr-fix skill
-3. Claude reads the review comments, finds the plan, reads progress.txt
-4. Claude fixes all requested changes in one pass
-5. Claude updates progress.txt and writes commit message + PR comment to files
-6. The workflow commits, pushes, and comments on the PR
+2. Runs `gather-pr-context` to collect PR data, reviews, comments, and commit history into `context.txt`
+3. Runs Claude with the pr-fix skill
+4. Claude reads the review comments, finds the plan, reads progress.txt
+5. Claude fixes all requested changes in one pass
+6. Claude updates progress.txt and writes commit message + PR comment to files
+7. The workflow commits, pushes, and posts the comment
 
 The loop returns to the review step.
 
-### 6. pr-merge (coming soon)
+### 5. pr-merge (coming soon)
 
-Auto-merge on approval is being extracted into its own workflow (`pr-approved.yml`). When complete, approving a PR will trigger Claude to write a clean squash-merge commit message and merge automatically.
+Auto-merge on approval is being extracted into its own workflow (`pr-approved.yml`). When complete, approving a PR with `@claude` will trigger Claude to write a clean squash-merge commit message and merge automatically.
 
 ## progress.txt
 
@@ -178,7 +156,7 @@ Before using this workflow with a client repo:
 
 2. **Allow squash merging**: Same section, make sure "Allow squash merging" is ON.
 
-3. **Add the workflow file**: Create `.github/workflows/pr-respond.yml` that calls the reusable workflow:
+3. **Add the workflow file**: Create `.github/workflows/pr-changes-requested.yml` that calls the reusable workflow:
 
    ```yaml
    on:
@@ -186,8 +164,8 @@ Before using this workflow with a client repo:
        types: [submitted]
 
    jobs:
-     pr-respond:
-       uses: chriswickett/agentic/.github/workflows/pr-respond.yml@main
+     pr-changes-requested:
+       uses: chriswickett/agentic/.github/workflows/pr-changes-requested.yml@main
        secrets:
          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
          AGENTIC_BOT_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
