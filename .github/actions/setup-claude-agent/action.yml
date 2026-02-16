@@ -52,4 +52,4 @@ runs:
     - name: Configure Chrome DevTools MCP
       shell: bash
       run: |
-        echo '{"mcpServers":{"chrome-devtools":{"type":"stdio","command":"npx","args":["chrome-devtools-mcp@latest"]}}}' > ~/.claude.json
+        echo '{"mcpServers":{"chrome-devtools":{"type":"stdio","command":"npx","args":["chrome-devtools-mcp@latest","--browserUrl=http://localhost:9222"]}}}' > ~/.claude.json
