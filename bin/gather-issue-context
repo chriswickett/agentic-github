@@ -23,4 +23,4 @@ COMMENTS_JSON=$(gh api "repos/$REPO/issues/$ISSUE_NUMBER/comments" --paginate)
   echo "---------"
   jq -r '.[] | "\(.created_at) - \(.user.login): \(.body)"' <<< "$COMMENTS_JSON"
   echo "=== END UNTRUSTED ISSUE DATA ==="
-} > /tmp/context.txt
+}

@@ -46,6 +46,7 @@ Write a commit message to `/tmp/commit_msg.txt` following these conventions:
 
 - Standard prefix (feat:, fix:, docs:, refactor:, etc.)
 - Subject capitalised after colon, imperative mood, under 50 characters
+- The first line of the commit body (after the subject and blank line) must be `issue: #<issue-number>`
 - Body explains why, not just what
 - 72 character wrap for body lines
 - No co-author credit

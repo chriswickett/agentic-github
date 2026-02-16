@@ -31,6 +31,9 @@ $COMMENTS_JSON")
 
 COMMITS=$(git log -n 10 --format="%h %s%n%n%b" --name-only origin/main..HEAD | awk 'NR>1 && /^[0-9a-f]+ /{print "----"} {print}')
 
+# Extract linked issue number from commit bodies
+ISSUE_NUMBER=$(git log --format="%b" origin/main..HEAD | sed -n 's/.*issue: #\([0-9]\+\).*/\1/p' | head -1)
+
 {
   echo "=== BEGIN UNTRUSTED PR DATA ==="
   echo "PR number: $(jq -r '.number' <<< "$PR_JSON")"
@@ -70,4 +73,10 @@ COMMITS=$(git log -n 10 --format="%h %s%n%n%b" --name-only origin/main..HEAD | a
   echo "=== BEGIN UNTRUSTED COMMIT HISTORY ==="
   echo "$COMMITS"
   echo "=== END UNTRUSTED COMMIT HISTORY ==="
-} > /tmp/context.txt
+}
+
+# Append linked issue context if found
+if [[ -n "$ISSUE_NUMBER" ]]; then
+  echo ""
+  "$(dirname "$0")/gather-issue-context" "$ISSUE_NUMBER" "$REPO"
+fi

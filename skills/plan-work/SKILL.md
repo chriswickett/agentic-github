@@ -1,6 +1,6 @@
 ---
 name: plan-work
-description: A skill for planning LLM-driven work through structured conversation.
+description: Plan work through structured conversation and create a GitHub issue.
 ---
 
 # plan-work
@@ -47,22 +47,20 @@ Possible areas to clarify:
 
 Once you have enough context, summarise the plan briefly and ask:
 
-"Want me to output an MD of this?"
+"Want me to create a GitHub issue for this?"
 
-If yes, create a markdown file at `./plans/<descriptive-name>.md`.
+### 5. Create the GitHub issue
 
-If you are Warp, use the `create_file` tool — do NOT use `create_plan` as that creates an internal artifact, not a file on disk.
+Use `gh issue create` to create the issue. The repo is determined from the current git remote (`gh` will pick it up automatically, or the user may specify).
 
-### Plan Structure
+The issue title should be a concise summary prefixed with a type label, e.g. `feat: Add signup button` or `fix: Header overflow on mobile`.
 
-The plan will be executed by an intelligent agent that **cannot ask questions**. Structure the plan in this order:
+### Issue body structure
+
+The issue will be executed by an intelligent agent that **cannot ask questions**. Structure the body in this order:
 
 1. **Problem statement**: What needs to be built/fixed
-2. **Visual references** (if applicable): For UI features:
-   - Ask user for the file path to any reference images (can't extract from conversation)
-   - Copy images to `./plans/images/<descriptive-name>.png`
-   - Reference in plan using: `![Description](../plans/images/<descriptive-name>.png)`
-   - Include both reference/inspiration and flat designs if provided
+2. **Visual references** (if applicable): For UI features, attach or link reference images
 3. **Proposed changes**: What to implement (the plan steps)
 4. **Current state**: Brief context about relevant existing code
 5. **Code examples from the codebase**: Show how similar patterns are already implemented
@@ -75,3 +73,7 @@ The plan will be executed by an intelligent agent that **cannot ask questions**.
 7. **Acceptance criteria**: Clear definition of what "done" looks like
 
 The goal: an intelligent agent should be able to implement without asking "how do we do X in this codebase?" because they can see examples of X already being done.
+
+### 6. Output
+
+After creating the issue, display the issue URL so the user can review it. Let them know they can trigger implementation by commenting `@claude /pr-start` on the issue.

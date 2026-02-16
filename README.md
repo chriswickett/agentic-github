@@ -4,10 +4,10 @@ Reusable Claude Code skills and GitHub Actions workflows for automated PR lifecy
 
 ## Skills
 
-- **plan-work** — creates plans through structured conversation
-- **do-work** — executes plans
-- **pr-start** — implements work from a GitHub issue, writes output files for the workflow to commit and open a PR
-- **pr-start-local** — creates branch, executes plan, commits, and opens a PR (local use)
+- **plan-work** — creates GitHub issues through structured conversation
+- **do-work** — implements work from a GitHub issue
+- **pr-start** — implements a GitHub issue in CI, writes output files for the workflow to commit and open a PR
+- **pr-start-local** — implements a GitHub issue locally, creates branch, commits, and opens a PR
 - **pr-fix** — fixes code based on reviewer feedback
 - **gh-respond** — answers questions and responds to PR or issue comments
 - **pr-merge** — writes clean commit message for squash-merging approved PRs
@@ -19,18 +19,18 @@ A system where an AI agent handles the full PR lifecycle. All interactions requi
 
 ## The Players
 
-- **You** (human): Write plans, trigger initial work, review PRs, approve or reject
-- **Claude** (local): Runs on your machine. Creates plans, executes work, opens PRs
-- **GClaude** (GitHub Actions): Runs in GitHub's cloud on PR events. Fixes, responds, or merges
+- **You** (human): Create issues, trigger work, review PRs, approve or reject
+- **Claude** (local): Runs on your machine. Helps plan issues, executes work, opens PRs
+- **GClaude** (GitHub Actions): Runs in GitHub's cloud on issue and PR events. Implements, fixes, responds, or merges
 
 ## The Loop
 
 ```
-You write a plan
+You create a GitHub issue (or /plan-work helps you)
        ↓
-Claude executes it locally
+@claude /pr-start on the issue (or /pr-start-local)
        ↓
-Claude commits and opens a PR
+Claude implements and opens a PR (Closes #issue)
        ↓
 You review the PR
        ↓
@@ -47,17 +47,15 @@ Back to review
 
 ### 1. Planning (local, you + Claude)
 
-You run `/plan-work`. Claude asks what you want to build, researches the codebase, asks clarifying questions, then writes a plan to `./plans/something.md`.
+You run `/plan-work`. Claude asks what you want to build, researches the codebase, asks clarifying questions, then creates a GitHub issue with the plan.
 
-### 2. Execution (local, Claude)
+### 2. Execution (GitHub Actions or local)
 
-You run `/pr-start`. Claude asks which plan to execute, creates a branch, then delegates to do-work to implement the changes. When done, Claude:
+Comment `@claude /pr-start` on the issue. GClaude implements the plan, commits with `issue: #N` in the body, and opens a PR with `Closes #N`.
 
-- Creates `progress.txt` with initial context (what was implemented)
-- Commits with the plan name in the commit body: `plan: something.md`
-- Pushes and opens a pull request
+Alternatively, run `/pr-start-local` to do this on your machine.
 
-(`/do-work` can also be used standalone if you just want to execute a plan without the PR lifecycle.)
+(`/do-work` can also be used standalone if you just want to implement an issue without the PR lifecycle.)
 
 ### 3. Review (GitHub, human)
 
@@ -68,11 +66,11 @@ A human reviews the PR. To trigger the bot, start a review or comment with `@cla
 Runs when a review with `changes_requested` starts with `@claude`:
 
 1. Checks out the repo at the PR branch
-2. Runs `gather-pr-context` to collect PR data, reviews, comments, and commit history into `context.txt`
+2. Runs `gather-pr-context` to collect PR data, reviews, comments, commit history, and the linked issue into `context.txt`
 3. Runs Claude with the pr-fix skill
-4. Claude reads the review comments, finds the plan, reads progress.txt
+4. Claude reads the review comments, finds the linked issue for original context
 5. Claude fixes all requested changes in one pass
-6. Claude updates progress.txt and writes commit message + PR comment to files
+6. Claude writes commit message + PR comment to files
 7. The workflow commits, pushes, and posts the comment
 
 The loop returns to the review step.
@@ -92,32 +90,12 @@ Runs when a PR or issue comment starts with `@claude`:
 Runs when a review with `approved` starts with `@claude`:
 
 1. Checks out the repo at the PR branch
-2. Runs `gather-pr-context` to collect PR data, reviews, comments, and commit history into `context.txt`
+2. Runs `gather-pr-context` to collect PR data, reviews, comments, commit history, and the linked issue into `context.txt`
 3. Runs Claude with the pr-merge skill
-4. Claude reads progress.txt and commit history, writes a clean commit message
+4. Claude reads the commit history and linked issue, writes a clean commit message
 5. The workflow squash-merges the PR with that message
 
 The messy history of fix commits disappears. Main gets one clean commit.
-
-## progress.txt
-
-A simple log in plans/progress.txt that persists across rejection cycles. Claude (local) creates it when first committing, with initial context about what was implemented. GClaude reads it at the start of each cycle to understand history, appends what it tried before committing.
-
-Example:
-
-```
-## Initial Implementation - 2024-02-06T09:00:00Z
-Plan: add-signup-button.md
-Summary: Added signup button to header with click handler that navigates to /signup
-
-## Rejection 1 - 2024-02-06T10:30:00Z
-Review feedback: "Button color should be blue, not red"
-Action taken: Changed button color from red to blue
-
-## Rejection 2 - 2024-02-06T14:15:00Z
-Review feedback: "Actually make it match the brand color variable"
-Action taken: Updated button to use var(--brand-primary) instead of hardcoded blue
-```
 
 ## UI Testing (Conditional)
 
@@ -243,8 +221,6 @@ Before using this workflow with a client repo:
 5. **Add variables**: At repo level (Settings → Secrets and variables → Actions → Variables) or org level:
    - `AGENTIC_BOT_NAME`: The bot's GitHub username
    - `AGENTIC_BOT_EMAIL`: The bot's noreply email
-
-6. **Create plans directory**: Create an empty `./plans/` directory.
 
 ## TODO
 

@@ -15,19 +15,15 @@ PR metadata, review comments, and commit history are provided in your prompt.
 
 ### 1. Gather context
 
-Read `./plans/progress.txt` and review the commit history (provided in your prompt) to understand the full journey — initial implementation and any rejection cycles.
+Review the commit history and PR comments (provided in your prompt) to understand the full journey — initial implementation and any rejection cycles. The linked issue (the original plan) is also included in your context.
 
-### 2. Find the plan
-
-Parse the commit history for `plan: {filename.md}` in a commit body. Read that plan from `./plans/`.
-
-### 3. Write the commit message
+### 2. Write the commit message
 
 Write a clean commit message describing what was built. Follow the conventions in the commit skill at `../commit/SKILL.md`.
 
 The message should read as if the work was done right the first time. No mention of rejections, fix cycles, or iterations. Just the final result.
 
-The first line of the commit body (after the subject and blank line) must be `plan: {plan-filename.md}`.
+The first line of the commit body (after the subject and blank line) must be `issue: #<issue-number>`.
 
 ## Output
 

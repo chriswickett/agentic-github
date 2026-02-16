@@ -60,9 +60,9 @@ jobs:
           GH_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
         run: |
           if [[ "${{ steps.ref.outputs.is_pr }}" == "true" ]]; then
-            /tmp/skills/bin/gather-pr-context "${{ github.event.issue.number }}" "${{ github.repository }}"
+            /tmp/skills/bin/gather-pr-context "${{ github.event.issue.number }}" "${{ github.repository }}" > /tmp/context.txt
           else
-            /tmp/skills/bin/gather-issue-context "${{ github.event.issue.number }}" "${{ github.repository }}"
+            /tmp/skills/bin/gather-issue-context "${{ github.event.issue.number }}" "${{ github.repository }}" > /tmp/context.txt
           fi
 
       - name: Respond with Claude

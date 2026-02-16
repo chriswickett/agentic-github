@@ -28,7 +28,7 @@ jobs:
       - name: Gather context
         env:
           GH_TOKEN: ${{ secrets.AGENTIC_BOT_TOKEN }}
-        run: /tmp/skills/bin/gather-issue-context "${{ github.event.issue.number }}" "${{ github.repository }}"
+        run: /tmp/skills/bin/gather-issue-context "${{ github.event.issue.number }}" "${{ github.repository }}" > /tmp/context.txt
 
       - name: Install dependencies
         run: |
@@ -76,7 +76,9 @@ jobs:
           git push -u origin "$BRANCH"
 
           SUBJECT=$(head -1 /tmp/commit_msg.txt)
-          BODY=$(cat /tmp/pr_comment.txt)
+          BODY="$(cat /tmp/pr_comment.txt)
+
+          Closes #${{ github.event.issue.number }}"
           gh pr create \
             --title "$SUBJECT" \
             --body "$BODY" \
