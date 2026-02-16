@@ -70,7 +70,7 @@ The issue will be executed by an intelligent agent that **cannot ask questions**
    - Registration/export patterns
    - Similar feature implementations
 6. **Usage** (if applicable): Example of how to use the new feature
-7. **Acceptance criteria**: Clear definition of what "done" looks like
+7. **Acceptance criteria**: Clear definition of what "done" looks like. NOTE: this is not 'how to code the feature'. It is the OUTCOMES we want to see.
 
 The goal: an intelligent agent should be able to implement without asking "how do we do X in this codebase?" because they can see examples of X already being done.
 
