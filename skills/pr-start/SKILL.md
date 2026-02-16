@@ -53,14 +53,14 @@ Write a commit message to `/tmp/commit_msg.txt` following these conventions:
 
 ### 6. Write PR comment
 
-Write a concise paragraph to `/tmp/pr_comment.txt` explaining what was implemented.
+Write a concise paragraph to `/tmp/comment.txt` explaining what was implemented.
 
 ### 7. Finishing up
 
 Check that all three files have been created and populated:
 - `/tmp/pr_branch_name.txt`
 - `/tmp/commit_msg.txt`
-- `/tmp/pr_comment.txt`
+- `/tmp/comment.txt`
 
 You should consider that you have failed until all three have been created.
 

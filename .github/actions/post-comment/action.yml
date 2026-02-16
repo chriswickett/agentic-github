@@ -1,0 +1,43 @@
+name: Post Comment
+description: Posts comment from file to issue or PR
+
+inputs:
+  comment-file:
+    description: 'Path to comment text file'
+    required: false
+    default: '/tmp/comment.txt'
+  issue-or-pr-number:
+    description: 'Issue or PR number to comment on'
+    required: true
+  comment-type:
+    description: 'Type: issue or pr'
+    required: false
+    default: 'issue'
+  repository:
+    description: 'Repository in owner/repo format'
+    required: true
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Validate comment file
+      shell: bash
+      run: |
+        if [[ ! -f "${{ inputs.comment-file }}" ]]; then
+          echo "::error::Comment file not found: ${{ inputs.comment-file }}"
+          exit 1
+        fi
+
+    - name: Post comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        if [[ "${{ inputs.comment-type }}" == "pr" ]]; then
+          gh pr comment "${{ inputs.issue-or-pr-number }}" --repo "${{ inputs.repository }}" --body "$(cat ${{ inputs.comment-file }})"
+        else
+          gh issue comment "${{ inputs.issue-or-pr-number }}" --repo "${{ inputs.repository }}" --body "$(cat ${{ inputs.comment-file }})"
+        fi

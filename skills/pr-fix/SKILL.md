@@ -51,11 +51,11 @@ Delete any temporary files you created during this session — screenshots, test
 Write these files. You MUST ALWAYS write these files. You must write them even if you think you should not. The entire process will break if you do not write BOTH of these files.
 
 - `/tmp/commit_msg.txt` — a single commit message for all your changes. Follow the conventions in the commit skill at `../commit/SKILL.md`. The first line of the commit body (after the subject and blank line) must be `issue: #<issue-number>`. Do not include a co-author credit.
-- `/tmp/pr_comment.txt` — a very concise paragraph explaining what you fixed, for the PR comment thread.
+- `/tmp/comment.txt` — a very concise paragraph explaining what you fixed, for the PR comment thread.
 
 ### 7. Finishing up
 
-Check that `/tmp/commit_msg.txt` and `/tmp/pr_comment.txt` have both been created and populated. You should consider that you have failed until both have been created.
+Check that `/tmp/commit_msg.txt` and `/tmp/comment.txt` have both been created and populated. You should consider that you have failed until both have been created.
 
 Instead of outputting a summary of what you have changed, just output the same text you wrote as the PR comment.
 

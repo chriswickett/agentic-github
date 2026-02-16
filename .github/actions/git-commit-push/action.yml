@@ -1,0 +1,65 @@
+name: Git Commit and Push
+description: Commits changes and pushes to current or new branch
+
+inputs:
+  commit-msg-file:
+    description: 'Path to commit message file'
+    required: false
+    default: '/tmp/commit_msg.txt'
+  branch-name-file:
+    description: 'Path to branch name file (optional - creates new branch if provided)'
+    required: false
+    default: ''
+  github-token:
+    description: 'GitHub token for push access'
+    required: true
+  bot-name:
+    description: 'Git bot name for commits'
+    required: false
+    default: 'Claude Agent'
+  bot-email:
+    description: 'Git bot email for commits'
+    required: false
+    default: 'noreply@anthropic.com'
+
+runs:
+  using: composite
+  steps:
+    - name: Validate commit message file
+      shell: bash
+      run: |
+        if [[ ! -f "${{ inputs.commit-msg-file }}" ]]; then
+          echo "::error::Commit message file not found: ${{ inputs.commit-msg-file }}"
+          exit 1
+        fi
+
+    - name: Configure git
+      shell: bash
+      run: |
+        git config user.name "${{ inputs.bot-name }}"
+        git config user.email "${{ inputs.bot-email }}"
+
+    - name: Create new branch (if specified)
+      if: inputs.branch-name-file != ''
+      shell: bash
+      run: |
+        if [[ ! -f "${{ inputs.branch-name-file }}" ]]; then
+          echo "::error::Branch name file not found: ${{ inputs.branch-name-file }}"
+          exit 1
+        fi
+        BRANCH=$(cat "${{ inputs.branch-name-file }}" | tr -d '[:space:]')
+        git checkout -b "$BRANCH"
+
+    - name: Commit and push
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        git add -A
+        git commit -F "${{ inputs.commit-msg-file }}"
+
+        if [[ "${{ inputs.branch-name-file }}" != "" ]]; then
+          git push -u origin HEAD
+        else
+          git push
+        fi

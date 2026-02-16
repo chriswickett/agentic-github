@@ -1,0 +1,73 @@
+name: Create Pull Request
+description: Creates a PR and optionally comments on the originating issue
+
+inputs:
+  commit-msg-file:
+    description: 'Path to commit message file (used for PR title)'
+    required: false
+    default: '/tmp/commit_msg.txt'
+  comment-file:
+    description: 'Path to comment file (used for PR body)'
+    required: false
+    default: '/tmp/comment.txt'
+  base-branch:
+    description: 'Base branch for PR'
+    required: false
+    default: 'main'
+  issue-number:
+    description: 'Issue number to close and comment on (optional)'
+    required: false
+    default: ''
+  repository:
+    description: 'Repository in owner/repo format'
+    required: true
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Validate files
+      shell: bash
+      run: |
+        if [[ ! -f "${{ inputs.commit-msg-file }}" ]]; then
+          echo "::error::Commit message file not found: ${{ inputs.commit-msg-file }}"
+          exit 1
+        fi
+        if [[ ! -f "${{ inputs.comment-file }}" ]]; then
+          echo "::error::Comment file not found: ${{ inputs.comment-file }}"
+          exit 1
+        fi
+
+    - name: Create PR
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        SUBJECT=$(head -1 "${{ inputs.commit-msg-file }}")
+        BODY="$(cat ${{ inputs.comment-file }})"
+
+        if [[ "${{ inputs.issue-number }}" != "" ]]; then
+          BODY="$BODY
+
+          Closes #${{ inputs.issue-number }}"
+        fi
+
+        gh pr create \
+          --title "$SUBJECT" \
+          --body "$BODY" \
+          --head "$(git branch --show-current)" \
+          --base "${{ inputs.base-branch }}"
+
+    - name: Comment on issue
+      if: inputs.issue-number != ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        BRANCH=$(git branch --show-current)
+        PR_URL=$(gh pr view "$BRANCH" --json url -q .url)
+        gh issue comment "${{ inputs.issue-number }}" --body "PR opened: $PR_URL
+
+        $(cat ${{ inputs.comment-file }})"
