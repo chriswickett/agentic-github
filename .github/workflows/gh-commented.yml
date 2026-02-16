@@ -51,6 +51,13 @@ jobs:
             yarn install --frozen-lockfile
           fi
 
+      - name: Setup mkcert for trusted HTTPS
+        run: |
+          curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+          chmod +x mkcert-v*-linux-amd64
+          sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+          mkcert -install
+
       - name: Configure Chrome DevTools MCP
         run: |
           echo '{"mcpServers":{"chrome-devtools":{"type":"stdio","command":"npx","args":["chrome-devtools-mcp@latest"]}}}' > ~/.claude.json
