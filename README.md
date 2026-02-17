@@ -194,7 +194,9 @@ Before using these workflows with a client repo:
 
    jobs:
      gh-respond:
-       if: (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '@claude')) || (github.event_name == 'issues' && startsWith(github.event.issue.body, '@claude'))
+       if: |
+        (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '@claude') && !startsWith(github.event.comment.body, '@claude /pr-start')) ||
+        (github.event_name == 'issues' && startsWith(github.event.issue.body, '@claude'))
        runs-on: ubuntu-latest
        timeout-minutes: 5
        env:
