@@ -12,7 +12,7 @@ jobs:
   gh-respond:
     if: startsWith(github.event.comment.body || github.event.issue.body, '@claude') && !startsWith(github.event.comment.body || github.event.issue.body, '@claude /pr-start')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Determine ref
