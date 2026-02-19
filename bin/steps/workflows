@@ -28,9 +28,11 @@ confirm_overwrite() {
 }
 
 render_templates() {
+  local safe_repo="${AGENTIC_REPO//\\/\\\\}"
+  safe_repo="${safe_repo//&/\\&}"
   for template in "$TEMPLATE_DIR"/*.yml; do
     local filename=$(basename "$template")
-    sed "s|__AGENTIC_REPO__|$AGENTIC_REPO|g" "$template" > "$WORKFLOW_DIR/$filename"
+    sed "s|__AGENTIC_REPO__|$safe_repo|g" "$template" > "$WORKFLOW_DIR/$filename"
     echo -e "   ${DIM}$filename${RESET}"
   done
 }
