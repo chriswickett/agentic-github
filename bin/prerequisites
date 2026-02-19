@@ -6,13 +6,12 @@ AGENTIC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 source "$SCRIPT_DIR/lib/output.sh"
 
-# .env has all secrets — skip the prerequisites prompt
+# .env has both tokens — skip the prerequisites prompt
+# (bot name and email are derived from the token automatically)
 if [[ -f "$AGENTIC_ROOT/.env" ]]; then
   source "$AGENTIC_ROOT/.env"
   if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] \
-    && [[ -n "${AGENTIC_BOT_TOKEN:-}" ]] \
-    && [[ -n "${AGENTIC_BOT_NAME:-}" ]] \
-    && [[ -n "${AGENTIC_BOT_EMAIL:-}" ]]; then
+    && [[ -n "${AGENTIC_BOT_TOKEN:-}" ]]; then
     ok "Prerequisites satisfied (.env found)"
     exit 0
   fi
@@ -46,8 +45,6 @@ Before proceeding, you need two things:
          Org settings > Personal access tokens > Pending requests
        - Repository access: All repositories
        - Permissions: Contents (read/write), Pull requests (read/write), Issues (read/write), Metadata (read)
-     Also note the bot's noreply email from https://github.com/settings/emails
-       - It looks like: ID+username@users.noreply.github.com
 
   ${BOLD}2. Claude OAuth token${RESET}
      Run 'claude setup-token' in your terminal. It authenticates with your
