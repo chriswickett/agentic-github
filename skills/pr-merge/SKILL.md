@@ -11,6 +11,10 @@ You are running in a GitHub Actions VM. The repo is checked out at the PR branch
 
 PR metadata, review comments, and commit history are provided in your prompt.
 
+If this repo has a CLAUDE.md or any other AI directions, read them for context.
+
+Do NOT create tasks or use TodoWrite. Keep it simple.
+
 ## Process
 
 ### 1. Gather context
