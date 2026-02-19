@@ -10,6 +10,8 @@ echo ""
 
 if [[ -f "$CLIENT_DIR/CLAUDE.md" ]]; then
   warn "CLAUDE.md already exists — skipping"
+elif [[ -n "${NONINTERACTIVE:-}" ]]; then
+  warn "Skipping CLAUDE.md creation (non-interactive mode)"
 else
   read -rp "Create a CLAUDE.md template? [Y/n]: " CREATE_CLAUDE_MD
   if [[ "${CREATE_CLAUDE_MD,,}" != "n" ]]; then

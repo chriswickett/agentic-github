@@ -3,6 +3,16 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
+# Parse flags
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo)  export FULL_REPO="$2";  shift 2 ;;
+    --path)  export CLIENT_DIR="$2"; shift 2 ;;
+    -y)      export NONINTERACTIVE=1; shift ;;
+    *)       err "Unknown flag: $1" ;;
+  esac
+done
+
 for cmd in gh git jq; do
   command -v "$cmd" &>/dev/null || err "$cmd is not installed"
 done

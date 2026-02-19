@@ -4,6 +4,11 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
 
 require_vars FULL_REPO
 
+if [[ -n "${NONINTERACTIVE:-}" ]]; then
+  warn "Skipping collaborator setup (non-interactive mode)"
+  return 0 2>/dev/null || exit 0
+fi
+
 echo ""
 echo -e "${BOLD}Bot repo access${RESET}"
 echo ""

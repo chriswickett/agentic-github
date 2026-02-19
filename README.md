@@ -22,6 +22,12 @@ This interactively:
 7. Creates a CLAUDE.md template
 8. Commits and pushes
 
+For non-interactive use (CI or re-runs), pass `--repo` and `--path` to skip the prompts:
+
+```bash
+bin/install --repo acme/my-app --path ./my-app
+```
+
 The workflow files are thin callers that reference this repo's composite actions via `uses:`. When the agentic repo's actions are updated, all client repos pick up the changes automatically on the next workflow run.
 
 ### Workflow templates

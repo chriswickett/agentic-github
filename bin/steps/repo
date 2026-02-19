@@ -2,6 +2,13 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
 
+if [[ -n "${FULL_REPO:-}" && -n "${CLIENT_DIR:-}" ]]; then
+  CLIENT_DIR=$(cd "$CLIENT_DIR" && pwd) || err "Directory not found: $CLIENT_DIR"
+  ok "Using repo: $FULL_REPO ($CLIENT_DIR)"
+  export FULL_REPO CLIENT_DIR
+  return 0 2>/dev/null || exit 0
+fi
+
 echo "1) Create a new repo"
 echo "2) Use an existing repo"
 read -rp "Choose [1/2]: " REPO_CHOICE
