@@ -22,11 +22,13 @@ This interactively:
 7. Creates a CLAUDE.md template
 8. Commits and pushes
 
-For non-interactive use (CI or re-runs), pass `--repo` and `--path` to skip the prompts:
+For non-interactive use, CI, or to resume an interrupted install, pass `--repo` and `--path` to skip the repo step:
 
 ```bash
 bin/install --repo acme/my-app --path ./my-app
 ```
+
+Already-configured settings are applied idempotently, and the workflow step will ask before overwriting existing files. This makes it safe to re-run after a failure.
 
 The workflow files are thin callers that reference this repo's composite actions via `uses:`. When the agentic repo's actions are updated, all client repos pick up the changes automatically on the next workflow run.
 
