@@ -11,6 +11,24 @@ WORKFLOW_DIR="$CLIENT_DIR/.github/workflows"
 TEMPLATE_DIR="$AGENTIC_ROOT/templates/workflows"
 mkdir -p "$WORKFLOW_DIR"
 
+EXISTING=()
+for template in "$TEMPLATE_DIR"/*.yml; do
+  filename=$(basename "$template")
+  [[ -f "$WORKFLOW_DIR/$filename" ]] && EXISTING+=("$filename")
+done
+
+if (( ${#EXISTING[@]} > 0 )); then
+  warn "These workflow files already exist:"
+  for f in "${EXISTING[@]}"; do echo -e "   ${DIM}$f${RESET}"; done
+  echo ""
+  if [[ -z "${NONINTERACTIVE:-}" ]]; then
+    read -rp "Overwrite? [y/N]: " OVERWRITE
+    [[ "${OVERWRITE,,}" != "y" ]] && { warn "Skipped workflow files"; return 0 2>/dev/null || exit 0; }
+  else
+    info "Overwriting (non-interactive mode)"
+  fi
+fi
+
 for template in "$TEMPLATE_DIR"/*.yml; do
   filename=$(basename "$template")
   sed "s|__AGENTIC_REPO__|$AGENTIC_REPO|g" "$template" > "$WORKFLOW_DIR/$filename"
