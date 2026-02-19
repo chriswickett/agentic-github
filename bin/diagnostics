@@ -2,9 +2,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMPLATE_DIR="$SCRIPT_DIR/../templates/workflows"
+AGENTIC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TEMPLATE_DIR="$AGENTIC_ROOT/templates/workflows"
 
 source "$SCRIPT_DIR/lib/output.sh"
+
+[[ -f "$AGENTIC_ROOT/.env" ]] && source "$AGENTIC_ROOT/.env"
 
 # Override helpers for diagnostic checklist format
 ok()   { echo -e "  ${GREEN}✓${RESET} $*"; }
