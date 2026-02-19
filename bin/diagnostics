@@ -107,9 +107,12 @@ check_variables() {
 
 check_bot_access() {
   echo -e "${BOLD}Bot repo access${RESET}"
-  echo -n "Paste AGENTIC_BOT_TOKEN to test (or press Enter to skip): "
-  read -rs TEST_TOKEN
-  echo ""
+  local TEST_TOKEN="${AGENTIC_BOT_TOKEN:-}"
+  if [[ -z "$TEST_TOKEN" ]]; then
+    echo -n "Paste AGENTIC_BOT_TOKEN to test (or press Enter to skip): "
+    read -rs TEST_TOKEN
+    echo ""
+  fi
 
   if [[ -n "$TEST_TOKEN" ]]; then
     if GH_TOKEN="$TEST_TOKEN" gh api "/repos/$1" &>/dev/null 2>&1; then

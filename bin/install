@@ -18,6 +18,8 @@ require_gh_auth
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGENTIC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+[[ -f "$AGENTIC_ROOT/.env" ]] && source "$AGENTIC_ROOT/.env"
 AGENTIC_REPO=$(detect_remote "$AGENTIC_ROOT") \
   || err "Could not detect agentic repo remote"
 export SCRIPT_DIR AGENTIC_ROOT AGENTIC_REPO

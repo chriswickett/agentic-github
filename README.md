@@ -30,6 +30,19 @@ bin/install --repo acme/my-app --path ./my-app
 
 Already-configured settings are applied idempotently, and the workflow step will ask before overwriting existing files. This makes it safe to re-run after a failure.
 
+### Skipping prompts with `.env`
+
+To avoid re-typing secrets when setting up multiple client repos, create a `.env` file in the agentic repo root:
+
+```bash
+CLAUDE_CODE_OAUTH_TOKEN="your-oauth-token"
+AGENTIC_BOT_TOKEN="your-bot-pat"
+AGENTIC_BOT_NAME="your-bot-username"
+AGENTIC_BOT_EMAIL="123+bot@users.noreply.github.com"
+```
+
+The install script loads `.env` automatically if it exists. With all four values set, secrets are configured without prompts. The file is already in `.gitignore`.
+
 The workflow files are thin callers that reference this repo's composite actions via `uses:`. When the agentic repo's actions are updated, all client repos pick up the changes automatically on the next workflow run.
 
 ### Workflow templates
