@@ -44,11 +44,12 @@ if [[ "$REPO_CHOICE" == "1" ]]; then
   info "Creating $FULL_REPO ($VISIBILITY)..."
 
   if [[ "$OWNER_TYPE" == "2" ]]; then
-    gh repo create "$FULL_REPO" --"$VISIBILITY" --clone
+    gh repo create "$FULL_REPO" --"$VISIBILITY"
   else
-    gh repo create "$REPO_NAME" --"$VISIBILITY" --clone
+    gh repo create "$REPO_NAME" --"$VISIBILITY"
   fi
 
+  gh repo clone "$FULL_REPO" "$REPO_NAME"
   CLIENT_DIR="$(pwd)/$REPO_NAME"
   ok "Repo created and cloned to $CLIENT_DIR"
 
