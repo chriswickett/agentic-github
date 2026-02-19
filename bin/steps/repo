@@ -2,6 +2,16 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/guards.sh"
 
+clone_or_reuse() {
+  if [[ -d "$REPO_NAME" ]]; then
+    warn "$REPO_NAME/ already exists locally — reusing it"
+  else
+    info "Cloning $FULL_REPO..."
+    gh repo clone "$FULL_REPO" "$REPO_NAME"
+  fi
+  CLIENT_DIR="$(pwd)/$REPO_NAME"
+}
+
 if [[ -n "${FULL_REPO:-}" && -n "${CLIENT_DIR:-}" ]]; then
   CLIENT_DIR=$(cd "$CLIENT_DIR" && pwd) || err "Directory not found: $CLIENT_DIR"
   ok "Using repo: $FULL_REPO ($CLIENT_DIR)"
@@ -49,12 +59,7 @@ if [[ "$REPO_CHOICE" == "1" ]]; then
     gh repo create "$REPO_NAME" --"$VISIBILITY"
   fi
 
-  CLIENT_DIR="$(pwd)/$REPO_NAME"
-  if [[ -d "$CLIENT_DIR" ]]; then
-    warn "$REPO_NAME/ already exists locally — reusing it"
-  else
-    gh repo clone "$FULL_REPO" "$REPO_NAME"
-  fi
+  clone_or_reuse
   ok "Repo created and cloned to $CLIENT_DIR"
 
 elif [[ "$REPO_CHOICE" == "2" ]]; then
@@ -72,13 +77,7 @@ elif [[ "$REPO_CHOICE" == "2" ]]; then
     read -rp "owner/repo: " FULL_REPO
     [[ -z "$FULL_REPO" ]] && err "owner/repo cannot be empty"
     REPO_NAME=$(echo "$FULL_REPO" | cut -d/ -f2)
-    CLIENT_DIR="$(pwd)/$REPO_NAME"
-    if [[ -d "$CLIENT_DIR" ]]; then
-      warn "$REPO_NAME/ already exists locally — reusing it"
-    else
-      info "Cloning $FULL_REPO..."
-      gh repo clone "$FULL_REPO"
-    fi
+    clone_or_reuse
   fi
 
   ok "Using repo: $FULL_REPO ($CLIENT_DIR)"
