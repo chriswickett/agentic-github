@@ -4,6 +4,28 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
 
 require_vars FULL_REPO
 
+add_collaborator() {
+  info "Adding $BOT_NAME as collaborator..."
+  gh api -X PUT "/repos/$FULL_REPO/collaborators/$BOT_NAME" \
+    -f permission=write --silent
+  ok "$BOT_NAME added as collaborator (write access)"
+}
+
+accept_invitation() {
+  info "Accepting invitation as $BOT_NAME..."
+  local invite_id
+  invite_id=$(GH_TOKEN="$BOT_TOKEN" gh api "/user/repository_invitations" \
+    --jq ".[] | select(.repository.full_name==\"$FULL_REPO\") | .id" \
+    2>/dev/null || true)
+  if [[ -n "$invite_id" ]]; then
+    GH_TOKEN="$BOT_TOKEN" gh api -X PATCH \
+      "/user/repository_invitations/$invite_id" --silent
+    ok "Invitation accepted"
+  else
+    warn "Could not find invitation — the bot may need to accept manually at https://github.com/$FULL_REPO/invitations"
+  fi
+}
+
 if [[ -n "${NONINTERACTIVE:-}" ]]; then
   warn "Skipping collaborator setup (non-interactive mode)"
   return 0 2>/dev/null || exit 0
@@ -31,19 +53,9 @@ if [[ "$COLLAB_CHOICE" == "1" ]]; then
   fi
 
   if [[ -n "$BOT_NAME" ]]; then
-    info "Adding $BOT_NAME as collaborator..."
-    gh api -X PUT "/repos/$FULL_REPO/collaborators/$BOT_NAME" -f permission=write --silent
-    ok "$BOT_NAME added as collaborator (write access)"
-
+    add_collaborator
     if [[ -n "${BOT_TOKEN:-}" ]]; then
-      info "Accepting invitation as $BOT_NAME..."
-      INVITE_ID=$(GH_TOKEN="$BOT_TOKEN" gh api "/user/repository_invitations" --jq ".[] | select(.repository.full_name==\"$FULL_REPO\") | .id" 2>/dev/null || true)
-      if [[ -n "$INVITE_ID" ]]; then
-        GH_TOKEN="$BOT_TOKEN" gh api -X PATCH "/user/repository_invitations/$INVITE_ID" --silent
-        ok "Invitation accepted"
-      else
-        warn "Could not find invitation — the bot may need to accept manually at https://github.com/$FULL_REPO/invitations"
-      fi
+      accept_invitation
     else
       warn "Bot token not available — the bot will need to accept the invitation at https://github.com/$FULL_REPO/invitations"
     fi

@@ -13,18 +13,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-for cmd in gh git jq; do
-  command -v "$cmd" &>/dev/null || err "$cmd is not installed"
-done
-
-gh auth status &>/dev/null 2>&1 \
-  || err "Not authenticated with GitHub CLI. Run 'gh auth login' first."
+require_commands gh git jq
+require_gh_auth
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGENTIC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-AGENTIC_REMOTE=$(git -C "$AGENTIC_ROOT" remote get-url origin 2>/dev/null) \
+AGENTIC_REPO=$(detect_remote "$AGENTIC_ROOT") \
   || err "Could not detect agentic repo remote"
-AGENTIC_REPO=$(echo "$AGENTIC_REMOTE" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
 export SCRIPT_DIR AGENTIC_ROOT AGENTIC_REPO
 
 echo ""

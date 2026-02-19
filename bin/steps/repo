@@ -61,8 +61,7 @@ elif [[ "$REPO_CHOICE" == "2" ]]; then
   if [[ "$EXISTING_CHOICE" == "1" ]]; then
     read -rp "Path to local repo: " CLIENT_DIR_INPUT
     CLIENT_DIR=$(cd "$CLIENT_DIR_INPUT" && pwd) || err "Directory not found: $CLIENT_DIR_INPUT"
-    FULL_REPO=$(git -C "$CLIENT_DIR" remote get-url origin 2>/dev/null \
-      | sed -E 's|.*github\.com[:/]||; s|\.git$||') \
+    FULL_REPO=$(detect_remote "$CLIENT_DIR") \
       || err "Could not detect remote for $CLIENT_DIR"
   else
     read -rp "owner/repo: " FULL_REPO

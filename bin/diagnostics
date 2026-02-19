@@ -8,7 +8,127 @@ ok()   { echo -e "  ${GREEN}✓${RESET} $*"; }
 fail() { echo -e "  ${RED}✗${RESET} $*"; }
 warn() { echo -e "  ${YELLOW}!${RESET} $*"; }
 
-# --- Get repo ---
+check_gh_auth() {
+  echo -e "${BOLD}GitHub CLI${RESET}"
+  if gh auth status &>/dev/null 2>&1; then
+    ok "gh authenticated"
+  else
+    fail "gh not authenticated — run 'gh auth login'"
+  fi
+  echo ""
+}
+
+check_repo_access() {
+  echo -e "${BOLD}Repo access${RESET}"
+  if gh api "/repos/$1" &>/dev/null 2>&1; then
+    ok "Repo $1 is accessible"
+  else
+    fail "Cannot access $1 — check the repo exists and you have access"
+  fi
+  echo ""
+}
+
+check_repo_settings() {
+  echo -e "${BOLD}Repo settings${RESET}"
+  local settings
+  settings=$(gh api "/repos/$1" --jq '{auto_merge: .allow_auto_merge, squash: .allow_squash_merge, delete_branch: .delete_branch_on_merge}' 2>/dev/null || echo "{}")
+
+  if echo "$settings" | jq -e '.auto_merge == false' &>/dev/null; then
+    ok "Auto-merge disabled"
+  else
+    fail "Auto-merge should be disabled"
+  fi
+  if echo "$settings" | jq -e '.squash == true' &>/dev/null; then
+    ok "Squash merge enabled"
+  else
+    fail "Squash merge should be enabled"
+  fi
+  if echo "$settings" | jq -e '.delete_branch == true' &>/dev/null; then
+    ok "Delete branch on merge enabled"
+  else
+    fail "Delete branch on merge should be enabled"
+  fi
+  echo ""
+}
+
+check_workflow_files() {
+  echo -e "${BOLD}Workflow files${RESET}"
+  for wf in gh-commented gh-start-work pr-changes-requested pr-approved; do
+    if gh api "/repos/$1/contents/.github/workflows/${wf}.yml" &>/dev/null 2>&1; then
+      ok "${wf}.yml"
+    else
+      fail "${wf}.yml not found"
+    fi
+  done
+  echo ""
+}
+
+check_secrets() {
+  echo -e "${BOLD}Secrets${RESET}"
+  local secrets
+  secrets=$(gh secret list --repo "$1" 2>/dev/null || echo "")
+
+  if echo "$secrets" | grep -q "CLAUDE_CODE_OAUTH_TOKEN"; then
+    ok "CLAUDE_CODE_OAUTH_TOKEN is set"
+  else
+    fail "CLAUDE_CODE_OAUTH_TOKEN not set"
+  fi
+  if echo "$secrets" | grep -q "AGENTIC_BOT_TOKEN"; then
+    ok "AGENTIC_BOT_TOKEN is set"
+  else
+    fail "AGENTIC_BOT_TOKEN not set"
+  fi
+  echo ""
+}
+
+check_variables() {
+  echo -e "${BOLD}Variables${RESET}"
+  local vars
+  vars=$(gh variable list --repo "$1" 2>/dev/null || echo "")
+
+  if echo "$vars" | grep -q "AGENTIC_BOT_NAME"; then
+    BOT_NAME=$(echo "$vars" | grep "AGENTIC_BOT_NAME" | awk '{print $2}')
+    ok "AGENTIC_BOT_NAME = $BOT_NAME"
+  else
+    fail "AGENTIC_BOT_NAME not set"
+    BOT_NAME=""
+  fi
+  if echo "$vars" | grep -q "AGENTIC_BOT_EMAIL"; then
+    ok "AGENTIC_BOT_EMAIL is set"
+  else
+    fail "AGENTIC_BOT_EMAIL not set"
+  fi
+  echo ""
+}
+
+check_bot_access() {
+  echo -e "${BOLD}Bot repo access${RESET}"
+  echo -n "Paste AGENTIC_BOT_TOKEN to test (or press Enter to skip): "
+  read -rs TEST_TOKEN
+  echo ""
+
+  if [[ -n "$TEST_TOKEN" ]]; then
+    if GH_TOKEN="$TEST_TOKEN" gh api "/repos/$1" &>/dev/null 2>&1; then
+      ok "Bot token can access $1"
+    else
+      fail "Bot token cannot access $1"
+      cat <<EOF
+
+  ${DIM}Check:${RESET}
+  ${DIM}  - Resource owner is set to the org (not the bot's personal account)${RESET}
+  ${DIM}  - Org admin has approved the token (Org settings > Personal access tokens > Pending requests)${RESET}
+  ${DIM}  - Bot is a collaborator or member of a team with repo access${RESET}
+  ${DIM}  - Repository access: All repositories${RESET}
+  ${DIM}  - Permissions: Contents (read/write), Pull requests (read/write), Issues (read/write), Metadata (read)${RESET}
+EOF
+    fi
+  else
+    warn "Skipped — paste the bot token to verify access"
+  fi
+  echo ""
+}
+
+# --- Main ---
 
 if [[ -n "${1:-}" ]]; then
   REPO="$1"
@@ -20,123 +140,10 @@ echo ""
 echo -e "${BOLD}Diagnostics for $REPO${RESET}"
 echo ""
 
-# --- Check gh auth ---
-
-echo -e "${BOLD}GitHub CLI${RESET}"
-if gh auth status &>/dev/null 2>&1; then
-  ok "gh authenticated"
-else
-  fail "gh not authenticated — run 'gh auth login'"
-fi
-echo ""
-
-# --- Check repo exists and is accessible ---
-
-echo -e "${BOLD}Repo access${RESET}"
-if gh api "/repos/$REPO" &>/dev/null 2>&1; then
-  ok "Repo $REPO is accessible"
-else
-  fail "Cannot access $REPO — check the repo exists and you have access"
-fi
-echo ""
-
-# --- Check repo settings ---
-
-echo -e "${BOLD}Repo settings${RESET}"
-SETTINGS=$(gh api "/repos/$REPO" --jq '{auto_merge: .allow_auto_merge, squash: .allow_squash_merge, delete_branch: .delete_branch_on_merge}' 2>/dev/null || echo "{}")
-
-if echo "$SETTINGS" | jq -e '.auto_merge == false' &>/dev/null; then
-  ok "Auto-merge disabled"
-else
-  fail "Auto-merge should be disabled"
-fi
-
-if echo "$SETTINGS" | jq -e '.squash == true' &>/dev/null; then
-  ok "Squash merge enabled"
-else
-  fail "Squash merge should be enabled"
-fi
-
-if echo "$SETTINGS" | jq -e '.delete_branch == true' &>/dev/null; then
-  ok "Delete branch on merge enabled"
-else
-  fail "Delete branch on merge should be enabled"
-fi
-echo ""
-
-# --- Check workflow files ---
-
-echo -e "${BOLD}Workflow files${RESET}"
-for wf in gh-commented gh-start-work pr-changes-requested pr-approved; do
-  if gh api "/repos/$REPO/contents/.github/workflows/${wf}.yml" &>/dev/null 2>&1; then
-    ok "${wf}.yml"
-  else
-    fail "${wf}.yml not found"
-  fi
-done
-echo ""
-
-# --- Check secrets ---
-
-echo -e "${BOLD}Secrets${RESET}"
-SECRETS=$(gh secret list --repo "$REPO" 2>/dev/null || echo "")
-
-if echo "$SECRETS" | grep -q "CLAUDE_CODE_OAUTH_TOKEN"; then
-  ok "CLAUDE_CODE_OAUTH_TOKEN is set"
-else
-  fail "CLAUDE_CODE_OAUTH_TOKEN not set"
-fi
-
-if echo "$SECRETS" | grep -q "AGENTIC_BOT_TOKEN"; then
-  ok "AGENTIC_BOT_TOKEN is set"
-else
-  fail "AGENTIC_BOT_TOKEN not set"
-fi
-echo ""
-
-# --- Check variables ---
-
-echo -e "${BOLD}Variables${RESET}"
-VARS=$(gh variable list --repo "$REPO" 2>/dev/null || echo "")
-
-if echo "$VARS" | grep -q "AGENTIC_BOT_NAME"; then
-  BOT_NAME=$(echo "$VARS" | grep "AGENTIC_BOT_NAME" | awk '{print $2}')
-  ok "AGENTIC_BOT_NAME = $BOT_NAME"
-else
-  fail "AGENTIC_BOT_NAME not set"
-  BOT_NAME=""
-fi
-
-if echo "$VARS" | grep -q "AGENTIC_BOT_EMAIL"; then
-  ok "AGENTIC_BOT_EMAIL is set"
-else
-  fail "AGENTIC_BOT_EMAIL not set"
-fi
-echo ""
-
-# --- Test bot token and access ---
-
-echo -e "${BOLD}Bot repo access${RESET}"
-echo -n "Paste AGENTIC_BOT_TOKEN to test (or press Enter to skip): "
-read -rs TEST_TOKEN
-echo ""
-
-if [[ -n "$TEST_TOKEN" ]]; then
-  if GH_TOKEN="$TEST_TOKEN" gh api "/repos/$REPO" &>/dev/null 2>&1; then
-    ok "Bot token can access $REPO"
-  else
-    fail "Bot token cannot access $REPO"
-    cat <<EOF
-
-  ${DIM}Check:${RESET}
-  ${DIM}  - Resource owner is set to the org (not the bot's personal account)${RESET}
-  ${DIM}  - Org admin has approved the token (Org settings > Personal access tokens > Pending requests)${RESET}
-  ${DIM}  - Bot is a collaborator or member of a team with repo access${RESET}
-  ${DIM}  - Repository access: All repositories${RESET}
-  ${DIM}  - Permissions: Contents (read/write), Pull requests (read/write), Issues (read/write), Metadata (read)${RESET}
-EOF
-  fi
-else
-  warn "Skipped — paste the bot token to verify access"
-fi
-echo ""
+check_gh_auth
+check_repo_access "$REPO"
+check_repo_settings "$REPO"
+check_workflow_files "$REPO"
+check_secrets "$REPO"
+check_variables "$REPO"
+check_bot_access "$REPO"

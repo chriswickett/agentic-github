@@ -4,35 +4,45 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
 
 require_vars CLIENT_DIR AGENTIC_ROOT AGENTIC_REPO
 
-echo ""
-info "Writing workflow files..."
-
 WORKFLOW_DIR="$CLIENT_DIR/.github/workflows"
 TEMPLATE_DIR="$AGENTIC_ROOT/templates/workflows"
-mkdir -p "$WORKFLOW_DIR"
 
-EXISTING=()
-for template in "$TEMPLATE_DIR"/*.yml; do
-  filename=$(basename "$template")
-  [[ -f "$WORKFLOW_DIR/$filename" ]] && EXISTING+=("$filename")
-done
+find_existing_workflows() {
+  EXISTING=()
+  for template in "$TEMPLATE_DIR"/*.yml; do
+    local filename=$(basename "$template")
+    [[ -f "$WORKFLOW_DIR/$filename" ]] && EXISTING+=("$filename")
+  done
+}
 
-if (( ${#EXISTING[@]} > 0 )); then
+confirm_overwrite() {
   warn "These workflow files already exist:"
   for f in "${EXISTING[@]}"; do echo -e "   ${DIM}$f${RESET}"; done
   echo ""
-  if [[ -z "${NONINTERACTIVE:-}" ]]; then
-    read -rp "Overwrite? [y/N]: " OVERWRITE
-    [[ "${OVERWRITE,,}" != "y" ]] && { warn "Skipped workflow files"; return 0 2>/dev/null || exit 0; }
-  else
+  if [[ -n "${NONINTERACTIVE:-}" ]]; then
     info "Overwriting (non-interactive mode)"
+    return 0
   fi
+  read -rp "Overwrite? [y/N]: " OVERWRITE
+  [[ "${OVERWRITE,,}" == "y" ]]
+}
+
+render_templates() {
+  for template in "$TEMPLATE_DIR"/*.yml; do
+    local filename=$(basename "$template")
+    sed "s|__AGENTIC_REPO__|$AGENTIC_REPO|g" "$template" > "$WORKFLOW_DIR/$filename"
+    echo -e "   ${DIM}$filename${RESET}"
+  done
+}
+
+echo ""
+info "Writing workflow files..."
+mkdir -p "$WORKFLOW_DIR"
+
+find_existing_workflows
+if (( ${#EXISTING[@]} > 0 )); then
+  confirm_overwrite || { warn "Skipped workflow files"; return 0 2>/dev/null || exit 0; }
 fi
 
-for template in "$TEMPLATE_DIR"/*.yml; do
-  filename=$(basename "$template")
-  sed "s|__AGENTIC_REPO__|$AGENTIC_REPO|g" "$template" > "$WORKFLOW_DIR/$filename"
-  echo -e "   ${DIM}$filename${RESET}"
-done
-
+render_templates
 ok "Created workflow files in $WORKFLOW_DIR/"
