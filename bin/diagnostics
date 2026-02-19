@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/output.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$SCRIPT_DIR/../templates/workflows"
+
+source "$SCRIPT_DIR/lib/output.sh"
 
 # Override helpers for diagnostic checklist format
 ok()   { echo -e "  ${GREEN}✓${RESET} $*"; }
@@ -53,7 +56,8 @@ check_repo_settings() {
 
 check_workflow_files() {
   echo -e "${BOLD}Workflow files${RESET}"
-  for wf in gh-commented gh-start-work pr-changes-requested pr-approved; do
+  for template in "$TEMPLATE_DIR"/*.yml; do
+    local wf=$(basename "$template" .yml)
     if gh api "/repos/$1/contents/.github/workflows/${wf}.yml" &>/dev/null 2>&1; then
       ok "${wf}.yml"
     else
