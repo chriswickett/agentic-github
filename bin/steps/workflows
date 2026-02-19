@@ -11,7 +11,9 @@ find_existing_workflows() {
   EXISTING=()
   for template in "$TEMPLATE_DIR"/*.yml; do
     local filename=$(basename "$template")
-    [[ -f "$WORKFLOW_DIR/$filename" ]] && EXISTING+=("$filename")
+    if [[ -f "$WORKFLOW_DIR/$filename" ]]; then
+      EXISTING+=("$filename")
+    fi
   done
 }
 
