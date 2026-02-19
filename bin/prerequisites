@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BOLD=$'\033[1m'
+CYAN=$'\033[0;36m'
+RESET=$'\033[0m'
+
+cat <<EOF
+
+${BOLD}Prerequisites${RESET}
+
+Before proceeding, you need two things:
+
+  ${BOLD}1. GitHub bot account + PAT${RESET}
+     Create a GitHub machine account (e.g. yourname-bot). You can use
+     plus addressing to reuse your email (user+bot@gmail.com goes to
+     the same inbox as user@gmail.com).
+
+     Then generate a fine-grained Personal Access Token on the bot account:
+       - Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token
+       - Token name: anything you like (e.g. agentic-bot) — just a label for your reference
+       - Resource owner: set this to your ORG, not the bot's personal account
+         (a token scoped to the bot user can't access org repos, even if the bot is a member)
+         One PAT covers all repos in that org. You'd need a separate PAT for a
+         different org or for personal repos.
+       - After creating the token, an org admin must approve it:
+         Org settings > Personal access tokens > Pending requests
+       - Repository access: All repositories
+       - Permissions: Contents (read/write), Pull requests (read/write), Issues (read/write), Metadata (read)
+     Also note the bot's noreply email from https://github.com/settings/emails
+       - It looks like: ID+username@users.noreply.github.com
+
+  ${BOLD}2. Claude OAuth token${RESET}
+     Run 'claude setup-token' in your terminal. It authenticates with your
+     Claude Pro/Max subscription and outputs an OAuth token to copy.
+
+EOF
+
+read -rp "Do you have these ready? [y/N]: " PREREQS_READY
+[[ "${PREREQS_READY,,}" == "y" ]] || { echo ""; echo -e "${CYAN}Set those up first, then re-run this script.${RESET}"; exit 1; }

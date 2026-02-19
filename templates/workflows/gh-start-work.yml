@@ -1,0 +1,39 @@
+name: GH Start Work
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  pr-start:
+    if: "!github.event.issue.pull_request && startsWith(github.event.comment.body, '@claude /pr-start')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: __AGENTIC_REPO__/.github/actions/setup-claude-agent@main
+
+      - uses: __AGENTIC_REPO__/.github/actions/run-claude-skill@main
+        with:
+          skill-name: pr-start
+          context-type: issue
+          context-number: ${{ github.event.issue.number }}
+          repository: ${{ github.repository }}
+          claude-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
+
+      - uses: __AGENTIC_REPO__/.github/actions/git-commit-push@main
+        with:
+          branch-name-file: /tmp/pr_branch_name.txt
+          github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
+          bot-name: ${{ vars.AGENTIC_BOT_NAME }}
+          bot-email: ${{ vars.AGENTIC_BOT_EMAIL }}
+
+      - uses: __AGENTIC_REPO__/.github/actions/create-pr@main
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          repository: ${{ github.repository }}
+          github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}

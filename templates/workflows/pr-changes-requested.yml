@@ -1,0 +1,40 @@
+name: PR Changes Requested
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  pr-fix:
+    if: github.event.review.state == 'changes_requested' && startsWith(github.event.review.body, '@claude')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: __AGENTIC_REPO__/.github/actions/setup-claude-agent@main
+
+      - uses: __AGENTIC_REPO__/.github/actions/run-claude-skill@main
+        with:
+          skill-name: pr-fix
+          context-type: pr
+          context-number: ${{ github.event.pull_request.number }}
+          repository: ${{ github.repository }}
+          claude-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
+
+      - uses: __AGENTIC_REPO__/.github/actions/git-commit-push@main
+        with:
+          github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
+          bot-name: ${{ vars.AGENTIC_BOT_NAME }}
+          bot-email: ${{ vars.AGENTIC_BOT_EMAIL }}
+
+      - uses: __AGENTIC_REPO__/.github/actions/post-comment@main
+        with:
+          issue-or-pr-number: ${{ github.event.pull_request.number }}
+          comment-type: pr
+          repository: ${{ github.repository }}
+          github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
