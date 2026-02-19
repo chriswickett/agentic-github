@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/guards.sh"
 
 if [[ -n "${FULL_REPO:-}" && -n "${CLIENT_DIR:-}" ]]; then
   CLIENT_DIR=$(cd "$CLIENT_DIR" && pwd) || err "Directory not found: $CLIENT_DIR"
