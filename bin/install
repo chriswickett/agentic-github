@@ -46,7 +46,7 @@ cat << EOF
 ${BOLD}${GREEN}Setup complete!${RESET}
 
   Repo:      https://github.com/$FULL_REPO
-  Workflows: 4 files in .github/workflows/
+  Workflows: $(ls -1 "$AGENTIC_ROOT"/templates/workflows/*.yml | wc -l | tr -d ' ') files in .github/workflows/
 
 Flesh out CLAUDE.md with detailed project context, then verify the setup:
 
