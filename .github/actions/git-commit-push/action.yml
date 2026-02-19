@@ -55,7 +55,7 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        git add -A
+        git add -A -- ':!.github'
         git commit -F "${{ inputs.commit-msg-file }}"
 
         if [[ "${{ inputs.branch-name-file }}" != "" ]]; then
