@@ -9,18 +9,20 @@ if [[ -n "${NONINTERACTIVE:-}" ]]; then
   return 0 2>/dev/null || exit 0
 fi
 
-echo ""
-echo -e "${BOLD}Bot repo access${RESET}"
-echo ""
-echo "The bot needs write access to this repo. Two approaches:"
-echo ""
-echo "1) Add bot directly as collaborator (simple, per-repo)"
-echo "2) Skip — I've added the bot to an org team that has repo access"
-echo ""
-echo -e "${DIM}Tip: If you're using a GitHub org, add the bot to a team instead.${RESET}"
-echo -e "${DIM}Any repo the team can access, the bot automatically can too —${RESET}"
-echo -e "${DIM}no need to add it individually each time you run this script.${RESET}"
-echo ""
+cat << EOF
+
+${BOLD}Bot repo access${RESET}
+
+The bot needs write access to this repo. Two approaches:
+
+1) Add bot directly as collaborator (simple, per-repo)
+2) Skip — I've added the bot to an org team that has repo access
+
+${DIM}Tip: If you're using a GitHub org, add the bot to a team instead.
+Any repo the team can access, the bot automatically can too —
+no need to add it individually each time you run this script.${RESET}
+
+EOF
 read -rp "Choose [1/2]: " COLLAB_CHOICE
 
 if [[ "$COLLAB_CHOICE" == "1" ]]; then
