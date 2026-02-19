@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BOLD=$'\033[1m'
-CYAN=$'\033[0;36m'
-RESET=$'\033[0m'
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
 cat <<EOF
 
