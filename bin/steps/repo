@@ -49,8 +49,12 @@ if [[ "$REPO_CHOICE" == "1" ]]; then
     gh repo create "$REPO_NAME" --"$VISIBILITY"
   fi
 
-  gh repo clone "$FULL_REPO" "$REPO_NAME"
   CLIENT_DIR="$(pwd)/$REPO_NAME"
+  if [[ -d "$CLIENT_DIR" ]]; then
+    warn "$REPO_NAME/ already exists locally — reusing it"
+  else
+    gh repo clone "$FULL_REPO" "$REPO_NAME"
+  fi
   ok "Repo created and cloned to $CLIENT_DIR"
 
 elif [[ "$REPO_CHOICE" == "2" ]]; then
@@ -67,10 +71,14 @@ elif [[ "$REPO_CHOICE" == "2" ]]; then
   else
     read -rp "owner/repo: " FULL_REPO
     [[ -z "$FULL_REPO" ]] && err "owner/repo cannot be empty"
-    info "Cloning $FULL_REPO..."
-    gh repo clone "$FULL_REPO"
     REPO_NAME=$(echo "$FULL_REPO" | cut -d/ -f2)
     CLIENT_DIR="$(pwd)/$REPO_NAME"
+    if [[ -d "$CLIENT_DIR" ]]; then
+      warn "$REPO_NAME/ already exists locally — reusing it"
+    else
+      info "Cloning $FULL_REPO..."
+      gh repo clone "$FULL_REPO"
+    fi
   fi
 
   ok "Using repo: $FULL_REPO ($CLIENT_DIR)"
