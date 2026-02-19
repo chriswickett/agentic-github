@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
+
+require_vars FULL_REPO
+
+echo ""
+echo -e "${BOLD}Bot repo access${RESET}"
+echo ""
+echo "The bot needs write access to this repo. Two approaches:"
+echo ""
+echo "1) Add bot directly as collaborator (simple, per-repo)"
+echo "2) Skip — I've added the bot to an org team that has repo access"
+echo ""
+echo -e "${DIM}Tip: If you're using a GitHub org, add the bot to a team instead.${RESET}"
+echo -e "${DIM}Any repo the team can access, the bot automatically can too —${RESET}"
+echo -e "${DIM}no need to add it individually each time you run this script.${RESET}"
+echo ""
+read -rp "Choose [1/2]: " COLLAB_CHOICE
+
+if [[ "$COLLAB_CHOICE" == "1" ]]; then
+  if [[ -z "${BOT_NAME:-}" ]]; then
+    read -rp "Bot GitHub username: " BOT_NAME
+  fi
+
+  if [[ -n "$BOT_NAME" ]]; then
+    info "Adding $BOT_NAME as collaborator..."
+    gh api -X PUT "/repos/$FULL_REPO/collaborators/$BOT_NAME" -f permission=write --silent
+    ok "$BOT_NAME added as collaborator (write access)"
+
+    if [[ -n "${BOT_TOKEN:-}" ]]; then
+      info "Accepting invitation as $BOT_NAME..."
+      INVITE_ID=$(GH_TOKEN="$BOT_TOKEN" gh api "/user/repository_invitations" --jq ".[] | select(.repository.full_name==\"$FULL_REPO\") | .id" 2>/dev/null || true)
+      if [[ -n "$INVITE_ID" ]]; then
+        GH_TOKEN="$BOT_TOKEN" gh api -X PATCH "/user/repository_invitations/$INVITE_ID" --silent
+        ok "Invitation accepted"
+      else
+        warn "Could not find invitation — the bot may need to accept manually at https://github.com/$FULL_REPO/invitations"
+      fi
+    else
+      warn "Bot token not available — the bot will need to accept the invitation at https://github.com/$FULL_REPO/invitations"
+    fi
+  fi
+else
+  echo ""
+  warn "Remember to add the bot to the repo via your team/org settings."
+fi

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
+
+require_vars CLIENT_DIR AGENTIC_ROOT AGENTIC_REPO
+
+echo ""
+info "Writing workflow files..."
+
+WORKFLOW_DIR="$CLIENT_DIR/.github/workflows"
+TEMPLATE_DIR="$AGENTIC_ROOT/templates/workflows"
+mkdir -p "$WORKFLOW_DIR"
+
+for template in "$TEMPLATE_DIR"/*.yml; do
+  filename=$(basename "$template")
+  sed "s|__AGENTIC_REPO__|$AGENTIC_REPO|g" "$template" > "$WORKFLOW_DIR/$filename"
+  echo -e "   ${DIM}$filename${RESET}"
+done
+
+ok "Created workflow files in $WORKFLOW_DIR/"

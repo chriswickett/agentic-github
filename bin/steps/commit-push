@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
+
+require_vars CLIENT_DIR
+
+echo ""
+info "Committing and pushing..."
+
+cd "$CLIENT_DIR"
+git add .github/workflows/
+[[ -f "CLAUDE.md" ]] && git add CLAUDE.md
+
+if git rev-parse HEAD &>/dev/null 2>&1; then
+  git commit -m "Add agentic workflow files and CLAUDE.md"
+  git push
+else
+  git checkout -b main
+  git commit -m "Initial commit: add agentic workflow files and CLAUDE.md"
+  git push -u origin main
+fi
+
+ok "Changes committed and pushed"

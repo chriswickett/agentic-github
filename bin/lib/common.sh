@@ -13,3 +13,11 @@ info()  { echo -e "${CYAN}$*${RESET}"; }
 ok()    { echo -e "${GREEN}✓ $*${RESET}"; }
 warn()  { echo -e "${YELLOW}$*${RESET}"; }
 err()   { echo -e "${RED}Error: $*${RESET}" >&2; exit 1; }
+
+require_vars() {
+  local missing=()
+  for var in "$@"; do
+    [[ -n "${!var:-}" ]] || missing+=("$var")
+  done
+  (( ${#missing[@]} == 0 )) || err "Missing required variables: ${missing[*]}"
+}

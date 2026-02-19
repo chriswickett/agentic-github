@@ -3,302 +3,36 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
-# --- Preamble ---
-
 for cmd in gh git jq; do
   command -v "$cmd" &>/dev/null || err "$cmd is not installed"
 done
 
-gh auth status &>/dev/null 2>&1 || err "Not authenticated with GitHub CLI. Run 'gh auth login' first."
+gh auth status &>/dev/null 2>&1 \
+  || err "Not authenticated with GitHub CLI. Run 'gh auth login' first."
 
-# Detect agentic repo from this script's location
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGENTIC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-
 AGENTIC_REMOTE=$(git -C "$AGENTIC_ROOT" remote get-url origin 2>/dev/null) \
   || err "Could not detect agentic repo remote"
-
-# Extract owner/repo from remote URL (handles https and ssh)
 AGENTIC_REPO=$(echo "$AGENTIC_REMOTE" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
+export SCRIPT_DIR AGENTIC_ROOT AGENTIC_REPO
 
 echo ""
 echo -e "${BOLD}Agentic Client Repo Setup${RESET}"
 echo -e "${DIM}Agentic repo: $AGENTIC_REPO${RESET}"
 
-# --- Prerequisites ---
-
 "$SCRIPT_DIR/prerequisites"
 
 echo ""
 
-# --- Interactive prompts ---
-
-echo "1) Create a new repo"
-echo "2) Use an existing repo"
-read -rp "Choose [1/2]: " REPO_CHOICE
-echo ""
-
-if [[ "$REPO_CHOICE" == "1" ]]; then
-  # --- New repo ---
-  read -rp "Repo name: " REPO_NAME
-  [[ -z "$REPO_NAME" ]] && err "Repo name cannot be empty"
-
-  echo ""
-  echo "1) Personal account"
-  echo "2) Organization"
-  read -rp "Choose [1/2]: " OWNER_TYPE
-
-  if [[ "$OWNER_TYPE" == "2" ]]; then
-    read -rp "Organization name: " ORG_NAME
-    [[ -z "$ORG_NAME" ]] && err "Organization name cannot be empty"
-    FULL_REPO="$ORG_NAME/$REPO_NAME"
-  else
-    OWNER=$(gh api user -q .login)
-    FULL_REPO="$OWNER/$REPO_NAME"
-  fi
-
-  echo ""
-  echo "1) Private"
-  echo "2) Public"
-  read -rp "Visibility [1/2]: " VIS_CHOICE
-
-  VISIBILITY="private"
-  [[ "$VIS_CHOICE" == "2" ]] && VISIBILITY="public"
-
-  echo ""
-  info "Creating $FULL_REPO ($VISIBILITY)..."
-
-  if [[ "$OWNER_TYPE" == "2" ]]; then
-    gh repo create "$FULL_REPO" --"$VISIBILITY" --clone
-  else
-    gh repo create "$REPO_NAME" --"$VISIBILITY" --clone
-  fi
-
-  CLIENT_DIR="$(pwd)/$REPO_NAME"
-  ok "Repo created and cloned to $CLIENT_DIR"
-
-elif [[ "$REPO_CHOICE" == "2" ]]; then
-  # --- Existing repo ---
-  echo "1) Local clone (enter path)"
-  echo "2) GitHub repo (enter owner/repo to clone)"
-  read -rp "Choose [1/2]: " EXISTING_CHOICE
-  echo ""
-
-  if [[ "$EXISTING_CHOICE" == "1" ]]; then
-    read -rp "Path to local repo: " CLIENT_DIR_INPUT
-    CLIENT_DIR=$(cd "$CLIENT_DIR_INPUT" && pwd) || err "Directory not found: $CLIENT_DIR_INPUT"
-    FULL_REPO=$(git -C "$CLIENT_DIR" remote get-url origin 2>/dev/null \
-      | sed -E 's|.*github\.com[:/]||; s|\.git$||') \
-      || err "Could not detect remote for $CLIENT_DIR"
-  else
-    read -rp "owner/repo: " FULL_REPO
-    [[ -z "$FULL_REPO" ]] && err "owner/repo cannot be empty"
-    info "Cloning $FULL_REPO..."
-    gh repo clone "$FULL_REPO"
-    REPO_NAME=$(echo "$FULL_REPO" | cut -d/ -f2)
-    CLIENT_DIR="$(pwd)/$REPO_NAME"
-  fi
-
-  ok "Using repo: $FULL_REPO ($CLIENT_DIR)"
-else
-  err "Invalid choice"
-fi
-
-# --- Configure repo settings ---
-
-echo ""
-info "Configuring repo settings..."
-
-gh api -X PATCH "/repos/$FULL_REPO" \
-  -F allow_auto_merge=false \
-  -F allow_squash_merge=true \
-  -F delete_branch_on_merge=true \
-  --silent
-
-ok "Auto-merge disabled, squash merge enabled, delete branch on merge enabled"
-
-# --- Write workflow files ---
-
-echo ""
-info "Writing workflow files..."
-
-WORKFLOW_DIR="$CLIENT_DIR/.github/workflows"
-TEMPLATE_DIR="$AGENTIC_ROOT/templates/workflows"
-mkdir -p "$WORKFLOW_DIR"
-
-for template in "$TEMPLATE_DIR"/*.yml; do
-  filename=$(basename "$template")
-  sed "s|__AGENTIC_REPO__|$AGENTIC_REPO|g" "$template" > "$WORKFLOW_DIR/$filename"
-  echo -e "   ${DIM}$filename${RESET}"
-done
-
-ok "Created workflow files in $WORKFLOW_DIR/"
-
-# --- Secrets and variables (optional) ---
-
-echo ""
-read -rp "Configure secrets and variables now? [y/N]: " SETUP_SECRETS
-
-if [[ "${SETUP_SECRETS,,}" == "y" ]]; then
-  echo ""
-  echo -e "${BOLD}Secrets${RESET}"
-  echo -e "${DIM}Run 'claude setup-token' to get your CLAUDE_CODE_OAUTH_TOKEN.${RESET}"
-  echo -e "${DIM}It authenticates with your Claude Pro/Max subscription and outputs an OAuth token.${RESET}"
-  echo ""
-
-  echo -n "CLAUDE_CODE_OAUTH_TOKEN: "
-  read -rs CLAUDE_TOKEN
-  echo ""
-  [[ -n "$CLAUDE_TOKEN" ]] && echo "$CLAUDE_TOKEN" | gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo "$FULL_REPO"
-
-  echo -n "AGENTIC_BOT_TOKEN: "
-  read -rs BOT_TOKEN
-  echo ""
-  [[ -n "$BOT_TOKEN" ]] && echo "$BOT_TOKEN" | gh secret set AGENTIC_BOT_TOKEN --repo "$FULL_REPO"
-
-  echo ""
-  echo -e "${BOLD}Variables${RESET}"
-
-  read -rp "AGENTIC_BOT_NAME: " BOT_NAME
-  [[ -n "$BOT_NAME" ]] && gh variable set AGENTIC_BOT_NAME --repo "$FULL_REPO" --body "$BOT_NAME"
-
-  read -rp "AGENTIC_BOT_EMAIL: " BOT_EMAIL
-  [[ -n "$BOT_EMAIL" ]] && gh variable set AGENTIC_BOT_EMAIL --repo "$FULL_REPO" --body "$BOT_EMAIL"
-
-  ok "Secrets and variables configured"
-else
-  echo ""
-  warn "Remember to set these before using the workflows:"
-  echo -e "  ${DIM}Run 'claude setup-token' to get your CLAUDE_CODE_OAUTH_TOKEN.${RESET}"
-  echo ""
-  echo "  Secrets:"
-  echo "    gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo $FULL_REPO"
-  echo "    gh secret set AGENTIC_BOT_TOKEN --repo $FULL_REPO"
-  echo ""
-  echo "  Variables:"
-  echo "    gh variable set AGENTIC_BOT_NAME --repo $FULL_REPO --body \"bot-username\""
-  echo "    gh variable set AGENTIC_BOT_EMAIL --repo $FULL_REPO --body \"123+bot@users.noreply.github.com\""
-fi
-
-# --- Add bot as collaborator ---
-
-echo ""
-echo -e "${BOLD}Bot repo access${RESET}"
-echo ""
-echo "The bot needs write access to this repo. Two approaches:"
-echo ""
-echo "1) Add bot directly as collaborator (simple, per-repo)"
-echo "2) Skip — I've added the bot to an org team that has repo access"
-echo ""
-echo -e "${DIM}Tip: If you're using a GitHub org, add the bot to a team instead.${RESET}"
-echo -e "${DIM}Any repo the team can access, the bot automatically can too —${RESET}"
-echo -e "${DIM}no need to add it individually each time you run this script.${RESET}"
-echo ""
-read -rp "Choose [1/2]: " COLLAB_CHOICE
-
-if [[ "$COLLAB_CHOICE" == "1" ]]; then
-  # Use BOT_NAME if already set from secrets step, otherwise ask
-  if [[ -z "${BOT_NAME:-}" ]]; then
-    read -rp "Bot GitHub username: " BOT_NAME
-  fi
-
-  if [[ -n "$BOT_NAME" ]]; then
-    info "Adding $BOT_NAME as collaborator..."
-    gh api -X PUT "/repos/$FULL_REPO/collaborators/$BOT_NAME" -f permission=write --silent
-    ok "$BOT_NAME added as collaborator (write access)"
-
-    # Accept the invitation using the bot's token
-    if [[ -n "${BOT_TOKEN:-}" ]]; then
-      info "Accepting invitation as $BOT_NAME..."
-      INVITE_ID=$(GH_TOKEN="$BOT_TOKEN" gh api "/user/repository_invitations" --jq ".[] | select(.repository.full_name==\"$FULL_REPO\") | .id" 2>/dev/null || true)
-      if [[ -n "$INVITE_ID" ]]; then
-        GH_TOKEN="$BOT_TOKEN" gh api -X PATCH "/user/repository_invitations/$INVITE_ID" --silent
-        ok "Invitation accepted"
-      else
-        warn "Could not find invitation — the bot may need to accept manually at https://github.com/$FULL_REPO/invitations"
-      fi
-    else
-      warn "Bot token not available — the bot will need to accept the invitation at https://github.com/$FULL_REPO/invitations"
-    fi
-  fi
-else
-  echo ""
-  warn "Remember to add the bot to the repo via your team/org settings."
-fi
-
-# --- CLAUDE.md ---
-
-echo ""
-echo -e "${BOLD}CLAUDE.md${RESET}"
-echo ""
-
-if [[ -f "$CLIENT_DIR/CLAUDE.md" ]]; then
-  warn "CLAUDE.md already exists — skipping"
-else
-  read -rp "Create a CLAUDE.md template? [Y/n]: " CREATE_CLAUDE_MD
-  if [[ "${CREATE_CLAUDE_MD,,}" != "n" ]]; then
-    read -rp "Project name: " PROJECT_NAME
-    read -rp "Short description: " PROJECT_DESC
-    read -rp "Tech stack (e.g. Next.js, TypeScript, Prisma): " TECH_STACK
-
-    cat > "$CLIENT_DIR/CLAUDE.md" << MD
-# ${PROJECT_NAME:-Project}
-
-${PROJECT_DESC:-A brief description of what this project does.}
-
-## Tech stack
-
-${TECH_STACK:-Describe the technologies used here.}
-
-## Project structure
-
-Describe the key directories and files here.
-
-## Development
-
-### Setup
-
-\`\`\`bash
-# How to install dependencies and get running locally
-\`\`\`
-
-### Common commands
-
-\`\`\`bash
-# dev server, tests, linting, etc.
-\`\`\`
-
-## Conventions
-
-- Describe coding conventions, naming patterns, etc.
-MD
-
-    ok "Created CLAUDE.md template — edit it to add more project context"
-  fi
-fi
-
-# --- Commit and push ---
-
-echo ""
-info "Committing and pushing..."
-
-cd "$CLIENT_DIR"
-git add .github/workflows/
-[[ -f "CLAUDE.md" ]] && git add CLAUDE.md
-
-if git rev-parse HEAD &>/dev/null 2>&1; then
-  git commit -m "Add agentic workflow files and CLAUDE.md"
-  git push
-else
-  # Empty repo — create initial commit
-  git checkout -b main
-  git commit -m "Initial commit: add agentic workflow files and CLAUDE.md"
-  git push -u origin main
-fi
-
-ok "Changes committed and pushed"
-
-# --- Summary ---
+STEPS="$SCRIPT_DIR/steps"
+source "$STEPS/repo"
+source "$STEPS/settings"
+source "$STEPS/workflows"
+source "$STEPS/secrets"
+source "$STEPS/collaborator"
+source "$STEPS/claude-md"
+source "$STEPS/commit-push"
 
 echo ""
 echo -e "${BOLD}${GREEN}Setup complete!${RESET}"
@@ -308,4 +42,5 @@ echo "  Workflows: 4 files in .github/workflows/"
 echo ""
 echo "Flesh out CLAUDE.md with detailed project context, then verify the setup:"
 echo ""
-echo "  gh issue create --repo $FULL_REPO --title 'Test agentic setup' --body '@claude Are you there?'"
+echo "  gh issue create --repo $FULL_REPO \\"
+echo "    --title 'Test agentic setup' --body '@claude Are you there?'"
