@@ -44,6 +44,8 @@ source "$STEPS/collaborator"
 source "$STEPS/claude-md"
 source "$STEPS/commit-push"
 
+"$SCRIPT_DIR/diagnostics" "$FULL_REPO"
+
 echo ""
 echo -e "${BOLD}${GREEN}Setup complete!${RESET}"
 echo ""
