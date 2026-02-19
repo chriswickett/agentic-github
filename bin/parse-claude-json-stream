@@ -1,17 +1,11 @@
 #!/usr/bin/env bash
-jq -s -r '
-  (last | .total_cost_usd // 0) as $total_cost |
-  ([.[] | select(.type != "system" and .type != "result")] |
-  map(
-    if .type=="assistant" and .message.content then
-      (.message.usage |
-        ((.input_tokens // 0) + (.cache_read_input_tokens // 0) + (.cache_creation_input_tokens // 0)) as $total_in |
-        "\($total_in)in/\(.output_tokens)out  cache:\(.cache_read_input_tokens // 0)r/\(.cache_creation_input_tokens // 0)w"
-      ) as $tokens |
+while IFS= read -r line; do
+  echo "$line" | jq -r '
+    if .type == "assistant" and .message.content then
       [.message.content[] |
-        if .type=="text" then
+        if .type == "text" then
           .text
-        elif .type=="tool_use" then
+        elif .type == "tool_use" then
           (.name + ": " + (
             if .input.file_path then
               (.input.file_path | split("/") | last)
@@ -26,14 +20,11 @@ jq -s -r '
         else
           empty
         end
-      ] | .[]
+      ] | join("\n\n")
+    elif .type == "result" and (.total_cost_usd // 0) > 0 then
+      "\nTotal cost: $\(.total_cost_usd | . * 100 | round / 100)"
     else
       empty
     end
-  ) | join("\n\n")),
-  (if $total_cost > 0 then
-    "\nTotal cost: $\($total_cost | . * 100 | round / 100)"
-  else
-    empty
-  end)
-'
+  ' 2>/dev/null
+done
