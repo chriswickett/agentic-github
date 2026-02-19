@@ -11,6 +11,7 @@ gh api -X PATCH "/repos/$FULL_REPO" \
   -F allow_auto_merge=false \
   -F allow_squash_merge=true \
   -F delete_branch_on_merge=true \
-  --silent
+  > /dev/null \
+  || err "Failed to update repo settings — check permissions"
 
 ok "Auto-merge disabled, squash merge enabled, delete branch on merge enabled"
