@@ -4,12 +4,20 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
 
 require_vars CLIENT_DIR
 
-echo ""
-info "Committing and pushing..."
-
 cd "$CLIENT_DIR"
 git add .github/workflows/
 [[ -f "CLAUDE.md" ]] && git add CLAUDE.md
+
+echo ""
+echo -e "${BOLD}Ready to commit and push:${RESET}"
+git -c color.status=always status --short
+echo ""
+read -rp "Push to main? [Y/n]: " CONFIRM_PUSH
+
+if [[ "${CONFIRM_PUSH,,}" == "n" ]]; then
+  warn "Skipped — files are staged but not committed"
+  return 0 2>/dev/null || exit 0
+fi
 
 if git rev-parse HEAD &>/dev/null 2>&1; then
   git commit -m "Add agentic workflow files and CLAUDE.md"
