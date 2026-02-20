@@ -24,3 +24,9 @@ runs:
         echo "::endgroup::"
         echo "$VARS_JSON" | jq -r 'to_entries[] | "\(.key)<<EOF\n\(.value)\nEOF"' >> $GITHUB_ENV
         echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)<<EOF\n\(.value)\nEOF"' >> $GITHUB_ENV
+        BOT_TOKEN=$(echo "$SECRETS_JSON" | jq -r '.AGENTIC_BOT_TOKEN // empty')
+        if [[ -n "$BOT_TOKEN" ]]; then
+          echo "GH_TOKEN<<EOF" >> $GITHUB_ENV
+          echo "$BOT_TOKEN" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        fi

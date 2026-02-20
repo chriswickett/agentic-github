@@ -31,8 +31,6 @@ runs:
     - name: Determine ref
       id: ref
       shell: bash
-      env:
-        GH_TOKEN: ${{ env.AGENTIC_BOT_TOKEN }}
       run: |
         EVENT=$(cat "$GITHUB_EVENT_PATH")
         if [[ "${{ inputs.context-type }}" == "pr" ]]; then
@@ -55,7 +53,7 @@ runs:
 
     - name: Clone skills repo
       shell: bash
-      run: git clone https://github.com/chriswickett/agentic.git /tmp/skills
+      run: git clone https://github.com/${{ github.repository_owner }}/agentic.git /tmp/skills
 
     - name: Install Claude CLI
       shell: bash
@@ -103,8 +101,6 @@ runs:
 
     - name: Gather context
       shell: bash
-      env:
-        GH_TOKEN: ${{ env.AGENTIC_BOT_TOKEN }}
       run: |
         EVENT=$(cat "$GITHUB_EVENT_PATH")
         NUMBER=$(echo "$EVENT" | jq -r '.issue.number // .pull_request.number')
