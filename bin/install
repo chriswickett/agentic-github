@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/guards.sh"
+
+# Parse flags
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo)  export FULL_REPO="$2";  shift 2 ;;
+    --path)  export CLIENT_DIR="$2"; shift 2 ;;
+    -y)      export NONINTERACTIVE=1; shift ;;
+    *)       err "Unknown flag: $1" ;;
+  esac
+done
+
+require_commands gh git jq
+require_gh_auth
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AGENTIC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+[[ -f "$AGENTIC_ROOT/.env" ]] && source "$AGENTIC_ROOT/.env"
+AGENTIC_REPO=$(detect_remote "$AGENTIC_ROOT") \
+  || err "Could not detect agentic repo remote"
+export SCRIPT_DIR AGENTIC_ROOT AGENTIC_REPO
+
+echo ""
+echo -e "${BOLD}Agentic Client Repo Setup${RESET}"
+echo -e "${DIM}Agentic repo: $AGENTIC_REPO${RESET}"
+
+"$SCRIPT_DIR/prerequisites"
+
+echo ""
+
+STEPS="$SCRIPT_DIR/steps"
+source "$STEPS/repo"
+source "$STEPS/settings"
+source "$STEPS/workflows"
+source "$STEPS/secrets"
+source "$STEPS/collaborator"
+source "$STEPS/claude-md"
+source "$STEPS/commit-push"
+
+"$SCRIPT_DIR/diagnostics" "$FULL_REPO"
+
+cat << EOF
+
+${BOLD}${GREEN}Setup complete!${RESET}
+
+  Repo:      https://github.com/$FULL_REPO
+  Workflows: $(ls -1 "$AGENTIC_ROOT"/templates/workflows/*.yml | wc -l | tr -d ' ') files in .github/workflows/
+
+Flesh out CLAUDE.md with detailed project context, then verify the setup:
+
+  gh issue create --repo $FULL_REPO \\
+    --title 'Test agentic setup' --body '@claude Are you there?'
+EOF

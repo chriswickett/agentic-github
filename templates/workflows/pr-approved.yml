@@ -1,0 +1,33 @@
+name: PR Approved
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  pr-merge:
+    if: github.event.review.state == 'approved' && startsWith(github.event.review.body, '@claude')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: __AGENTIC_REPO__/.github/actions/setup-claude-agent@main
+
+      - uses: __AGENTIC_REPO__/.github/actions/run-claude-skill@main
+        with:
+          skill-name: pr-merge
+          context-type: pr
+          context-number: ${{ github.event.pull_request.number }}
+          repository: ${{ github.repository }}
+          claude-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
+
+      - uses: __AGENTIC_REPO__/.github/actions/squash-merge@main
+        with:
+          pr-number: ${{ github.event.pull_request.number }}
+          repository: ${{ github.repository }}
+          github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}

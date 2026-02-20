@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/guards.sh"
+
+clone_or_reuse() {
+  if [[ -d "$REPO_NAME" ]]; then
+    warn "$REPO_NAME/ already exists locally — reusing it"
+  else
+    info "Cloning $FULL_REPO..."
+    gh repo clone "$FULL_REPO" "$REPO_NAME"
+  fi
+  CLIENT_DIR="$(pwd)/$REPO_NAME"
+}
+
+if [[ -n "${FULL_REPO:-}" && -n "${CLIENT_DIR:-}" ]]; then
+  CLIENT_DIR=$(cd "$CLIENT_DIR" && pwd) || err "Directory not found: $CLIENT_DIR"
+  ok "Using repo: $FULL_REPO ($CLIENT_DIR)"
+  export FULL_REPO CLIENT_DIR
+  return 0 2>/dev/null || exit 0
+fi
+
+echo "1) Create a new repo"
+echo "2) Use an existing repo"
+read -rp "Choose [1/2]: " REPO_CHOICE
+echo ""
+
+if [[ "$REPO_CHOICE" == "1" ]]; then
+  read -rp "Repo name: " REPO_NAME
+  [[ -z "$REPO_NAME" ]] && err "Repo name cannot be empty"
+
+  echo ""
+  echo "1) Personal account"
+  echo "2) Organization"
+  read -rp "Choose [1/2]: " OWNER_TYPE
+
+  if [[ "$OWNER_TYPE" == "2" ]]; then
+    read -rp "Organization name: " ORG_NAME
+    [[ -z "$ORG_NAME" ]] && err "Organization name cannot be empty"
+    FULL_REPO="$ORG_NAME/$REPO_NAME"
+  else
+    OWNER=$(gh api user -q .login)
+    FULL_REPO="$OWNER/$REPO_NAME"
+  fi
+
+  echo ""
+  echo "1) Private"
+  echo "2) Public"
+  read -rp "Visibility [1/2]: " VIS_CHOICE
+
+  VISIBILITY="private"
+  [[ "$VIS_CHOICE" == "2" ]] && VISIBILITY="public"
+
+  echo ""
+  info "Creating $FULL_REPO ($VISIBILITY)..."
+
+  if [[ "$OWNER_TYPE" == "2" ]]; then
+    gh repo create "$FULL_REPO" --"$VISIBILITY"
+  else
+    gh repo create "$REPO_NAME" --"$VISIBILITY"
+  fi
+
+  clone_or_reuse
+  ok "Repo created and cloned to $CLIENT_DIR"
+
+elif [[ "$REPO_CHOICE" == "2" ]]; then
+  echo "1) Local clone (enter path)"
+  echo "2) GitHub repo (enter owner/repo to clone)"
+  read -rp "Choose [1/2]: " EXISTING_CHOICE
+  echo ""
+
+  if [[ "$EXISTING_CHOICE" == "1" ]]; then
+    read -rp "Path to local repo: " CLIENT_DIR_INPUT
+    CLIENT_DIR=$(cd "$CLIENT_DIR_INPUT" && pwd) || err "Directory not found: $CLIENT_DIR_INPUT"
+    FULL_REPO=$(detect_remote "$CLIENT_DIR") \
+      || err "Could not detect remote for $CLIENT_DIR"
+  else
+    read -rp "owner/repo: " FULL_REPO
+    [[ -z "$FULL_REPO" ]] && err "owner/repo cannot be empty"
+    REPO_NAME=$(echo "$FULL_REPO" | cut -d/ -f2)
+    clone_or_reuse
+  fi
+
+  ok "Using repo: $FULL_REPO ($CLIENT_DIR)"
+else
+  err "Invalid choice"
+fi
+
+export FULL_REPO CLIENT_DIR

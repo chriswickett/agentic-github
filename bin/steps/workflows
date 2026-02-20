@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/guards.sh"
+
+require_vars CLIENT_DIR AGENTIC_ROOT AGENTIC_REPO
+
+WORKFLOW_DIR="$CLIENT_DIR/.github/workflows"
+TEMPLATE_DIR="$AGENTIC_ROOT/templates/workflows"
+
+find_existing_workflows() {
+  EXISTING=()
+  for template in "$TEMPLATE_DIR"/*.yml; do
+    local filename=$(basename "$template")
+    if [[ -f "$WORKFLOW_DIR/$filename" ]]; then
+      EXISTING+=("$filename")
+    fi
+  done
+}
+
+confirm_overwrite() {
+  warn "These workflow files already exist:"
+  for f in "${EXISTING[@]}"; do echo -e "   ${DIM}$f${RESET}"; done
+  echo ""
+  if [[ -n "${NONINTERACTIVE:-}" ]]; then
+    info "Overwriting (non-interactive mode)"
+    return 0
+  fi
+  read -rp "Overwrite? [y/N]: " OVERWRITE
+  [[ "${OVERWRITE,,}" == "y" ]]
+}
+
+render_templates() {
+  local safe_repo="${AGENTIC_REPO//\\/\\\\}"
+  safe_repo="${safe_repo//&/\\&}"
+  for template in "$TEMPLATE_DIR"/*.yml; do
+    local filename=$(basename "$template")
+    sed "s|__AGENTIC_REPO__|$safe_repo|g" "$template" > "$WORKFLOW_DIR/$filename"
+    echo -e "   ${DIM}$filename${RESET}"
+  done
+}
+
+echo ""
+info "Writing workflow files..."
+mkdir -p "$WORKFLOW_DIR"
+
+find_existing_workflows
+if (( ${#EXISTING[@]} > 0 )); then
+  confirm_overwrite || { warn "Skipped workflow files"; return 0 2>/dev/null || exit 0; }
+fi
+
+render_templates
+ok "Created workflow files in $WORKFLOW_DIR/"

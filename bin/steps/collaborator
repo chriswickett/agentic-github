@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/guards.sh"
+
+require_vars FULL_REPO
+
+add_collaborator() {
+  info "Adding $BOT_NAME as collaborator..."
+  gh api -X PUT "/repos/$FULL_REPO/collaborators/$BOT_NAME" \
+    -f permission=write --silent
+  ok "$BOT_NAME added as collaborator (write access)"
+}
+
+accept_invitation() {
+  info "Accepting invitation as $BOT_NAME..."
+  local invite_id
+  invite_id=$(GH_TOKEN="$BOT_TOKEN" gh api "/user/repository_invitations" \
+    --jq ".[] | select(.repository.full_name==\"$FULL_REPO\") | .id" \
+    2>/dev/null || true)
+  if [[ -n "$invite_id" ]]; then
+    GH_TOKEN="$BOT_TOKEN" gh api -X PATCH \
+      "/user/repository_invitations/$invite_id" --silent
+    ok "Invitation accepted"
+  else
+    warn "Could not find invitation — the bot may need to accept manually at https://github.com/$FULL_REPO/invitations"
+  fi
+}
+
+if [[ -n "${NONINTERACTIVE:-}" ]]; then
+  warn "Skipping collaborator setup (non-interactive mode)"
+  return 0 2>/dev/null || exit 0
+fi
+
+cat << EOF
+
+${BOLD}Bot repo access${RESET}
+
+The bot needs write access to this repo. Two approaches:
+
+1) Add bot directly as collaborator (simple, per-repo)
+2) Skip — I've added the bot to an org team that has repo access
+
+${DIM}Tip: If you're using a GitHub org, add the bot to a team instead.
+Any repo the team can access, the bot automatically can too —
+no need to add it individually each time you run this script.${RESET}
+
+EOF
+read -rp "Choose [1/2]: " COLLAB_CHOICE
+
+if [[ "$COLLAB_CHOICE" == "1" ]]; then
+  if [[ -z "${BOT_NAME:-}" ]]; then
+    read -rp "Bot GitHub username: " BOT_NAME
+  fi
+
+  if [[ -n "$BOT_NAME" ]]; then
+    add_collaborator
+    if [[ -n "${BOT_TOKEN:-}" ]]; then
+      accept_invitation
+    else
+      warn "Bot token not available — the bot will need to accept the invitation at https://github.com/$FULL_REPO/invitations"
+    fi
+  fi
+else
+  echo ""
+  warn "Remember to add the bot to the repo via your team/org settings."
+fi

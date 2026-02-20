@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/guards.sh"
+
+require_vars CLIENT_DIR
+
+echo ""
+echo -e "${BOLD}CLAUDE.md${RESET}"
+echo ""
+
+if [[ -f "$CLIENT_DIR/CLAUDE.md" ]]; then
+  warn "CLAUDE.md already exists — skipping"
+elif [[ -n "${NONINTERACTIVE:-}" ]]; then
+  warn "Skipping CLAUDE.md creation (non-interactive mode)"
+else
+  read -rp "Create a CLAUDE.md template? [Y/n]: " CREATE_CLAUDE_MD
+  if [[ "${CREATE_CLAUDE_MD,,}" != "n" ]]; then
+    read -rp "Project name: " PROJECT_NAME
+    read -rp "Short description: " PROJECT_DESC
+    read -rp "Tech stack (e.g. Next.js, TypeScript, Prisma): " TECH_STACK
+
+    cat > "$CLIENT_DIR/CLAUDE.md" << MD
+# ${PROJECT_NAME:-Project}
+
+${PROJECT_DESC:-A brief description of what this project does.}
+
+## Tech stack
+
+${TECH_STACK:-Describe the technologies used here.}
+
+## Project structure
+
+Describe the key directories and files here.
+
+## Development
+
+### Setup
+
+\`\`\`bash
+# How to install dependencies and get running locally
+\`\`\`
+
+### Common commands
+
+\`\`\`bash
+# dev server, tests, linting, etc.
+\`\`\`
+
+## Conventions
+
+- Describe coding conventions, naming patterns, etc.
+MD
+
+    ok "Created CLAUDE.md template — edit it to add more project context"
+  fi
+fi

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AGENTIC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+source "$SCRIPT_DIR/lib/output.sh"
+
+# .env has both tokens — skip the prerequisites prompt
+# (bot name and email are derived from the token automatically)
+if [[ -f "$AGENTIC_ROOT/.env" ]]; then
+  source "$AGENTIC_ROOT/.env"
+  if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] \
+    && [[ -n "${AGENTIC_BOT_TOKEN:-}" ]]; then
+    ok "Prerequisites satisfied (.env found)"
+    exit 0
+  fi
+fi
+
+# Non-interactive with no .env — can't prompt
+if [[ -n "${NONINTERACTIVE:-}" ]]; then
+  warn "Skipping prerequisites check (non-interactive mode)"
+  exit 0
+fi
+
+cat <<EOF
+
+${BOLD}Prerequisites${RESET}
+
+Before proceeding, you need two things:
+
+  ${BOLD}1. GitHub bot account + PAT${RESET}
+     Create a GitHub machine account (e.g. yourname-bot). You can use
+     plus addressing to reuse your email (user+bot@gmail.com goes to
+     the same inbox as user@gmail.com).
+
+     Then generate a fine-grained Personal Access Token on the bot account:
+       - Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token
+       - Token name: anything you like (e.g. agentic-bot) — just a label for your reference
+       - Resource owner: set this to your ORG, not the bot's personal account
+         (a token scoped to the bot user can't access org repos, even if the bot is a member)
+         One PAT covers all repos in that org. You'd need a separate PAT for a
+         different org or for personal repos.
+       - After creating the token, an org admin must approve it:
+         Org settings > Personal access tokens > Pending requests
+       - Repository access: All repositories
+       - Permissions: Contents (read/write), Pull requests (read/write), Issues (read/write), Metadata (read)
+
+  ${BOLD}2. Claude OAuth token${RESET}
+     Run 'claude setup-token' in your terminal. It authenticates with your
+     Claude Pro/Max subscription and outputs an OAuth token to copy.
+
+EOF
+
+read -rp "Do you have these ready? [y/N]: " PREREQS_READY
+[[ "${PREREQS_READY,,}" == "y" ]] || { echo ""; echo -e "${CYAN}Set those up first, then re-run this script.${RESET}"; exit 1; }
