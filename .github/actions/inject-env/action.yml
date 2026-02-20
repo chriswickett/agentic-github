@@ -1,0 +1,26 @@
+name: Inject Env
+description: Injects all secrets and vars into GITHUB_ENV
+
+inputs:
+  secrets-json:
+    description: 'All secrets as JSON'
+    required: true
+  vars-json:
+    description: 'All vars as JSON'
+    required: false
+    default: '{}'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        SECRETS_JSON: ${{ inputs.secrets-json }}
+        VARS_JSON: ${{ inputs.vars-json }}
+      run: |
+        echo "::group::inject-env debug"
+        echo "Vars keys: $(echo "$VARS_JSON" | jq -r 'keys | join(", ")')"
+        echo "Secrets keys: $(echo "$SECRETS_JSON" | jq -r 'keys | join(", ")')"
+        echo "::endgroup::"
+        echo "$VARS_JSON" | jq -r 'to_entries[] | "\(.key)<<EOF\n\(.value)\nEOF"' >> $GITHUB_ENV
+        echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)<<EOF\n\(.value)\nEOF"' >> $GITHUB_ENV

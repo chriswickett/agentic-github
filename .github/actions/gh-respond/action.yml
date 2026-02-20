@@ -1,0 +1,39 @@
+name: GH Respond
+description: Responds to issue or PR comments
+
+inputs:
+  secrets-json:
+    description: 'All secrets as JSON'
+    required: true
+  vars-json:
+    description: 'All vars as JSON'
+    required: false
+    default: '{}'
+
+runs:
+  using: composite
+  steps:
+    - name: Determine context type
+      id: context
+      shell: bash
+      run: |
+        EVENT=$(cat "$GITHUB_EVENT_PATH")
+        IS_PR=$(echo "$EVENT" | jq -r '.issue.pull_request // empty')
+        if [[ -n "$IS_PR" ]]; then
+          echo "type=pr" >> $GITHUB_OUTPUT
+        else
+          echo "type=issue" >> $GITHUB_OUTPUT
+        fi
+
+    - uses: chriswickett/agentic/.github/actions/run-skill@main
+      with:
+        skill-name: gh-respond
+        context-type: ${{ steps.context.outputs.type }}
+        secrets-json: ${{ inputs.secrets-json }}
+        vars-json: ${{ inputs.vars-json }}
+
+    - uses: chriswickett/agentic/.github/actions/post-comment@main
+      with:
+        issue-number: ${{ github.event.issue.number }}
+        repository: ${{ github.repository }}
+        github-token: ${{ env.AGENTIC_BOT_TOKEN }}

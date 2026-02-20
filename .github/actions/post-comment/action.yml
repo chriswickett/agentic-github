@@ -6,13 +6,9 @@ inputs:
     description: 'Path to comment text file'
     required: false
     default: '/tmp/comment.txt'
-  issue-or-pr-number:
+  issue-number:
     description: 'Issue or PR number to comment on'
     required: true
-  comment-type:
-    description: 'Type: issue or pr'
-    required: false
-    default: 'issue'
   repository:
     description: 'Repository in owner/repo format'
     required: true
@@ -36,8 +32,4 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        if [[ "${{ inputs.comment-type }}" == "pr" ]]; then
-          gh pr comment "${{ inputs.issue-or-pr-number }}" --repo "${{ inputs.repository }}" --body "$(cat ${{ inputs.comment-file }})"
-        else
-          gh issue comment "${{ inputs.issue-or-pr-number }}" --repo "${{ inputs.repository }}" --body "$(cat ${{ inputs.comment-file }})"
-        fi
+        gh issue comment "${{ inputs.issue-number }}" --repo "${{ inputs.repository }}" --body "$(cat ${{ inputs.comment-file }})"

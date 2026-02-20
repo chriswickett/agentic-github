@@ -2,6 +2,14 @@
 
 Reusable Claude Code skills and GitHub Actions composite actions for automated PR lifecycle management.
 
+## ⚠️ Security
+
+- Claude runs with `--dangerously-skip-permissions`, meaning it can execute any tool without approval
+- All GitHub Actions secrets and variables are injected as environment variables, so Claude has access to every secret and variable configured on the repo
+- The bot account's PAT is currently a classic token, which grants access to all repos the account can access
+
+Make sure you are comfortable with all three of these before using.
+
 ## Skills
 
 - **plan-work** — creates GitHub issues through structured conversation
@@ -148,31 +156,32 @@ export GH_TOKEN="ghp_..."
 
 ## Composite Actions
 
-This repo provides 6 composite actions that can be composed into workflows:
+This repo provides a reusable workflow and a set of composite actions.
 
-- **setup-claude-agent** — Sets up Claude CLI, skills repo, dependencies, mkcert, and Chrome DevTools MCP
-- **run-claude-skill** — Runs Claude with a specified skill and context (issue or PR). Inherits env vars from job.
+### Reusable Workflow
+
+**`agentic.yml`** — A single reusable workflow that handles all four event types (issue comments, new issues, PR reviews with changes requested, PR reviews with approval). It routes to the correct composite action based on the event payload.
+
+### High-level Actions
+
+Called by the reusable workflow. Each one calls `run-skill` then handles the post-skill steps (commit, comment, merge, etc.):
+
+- **pr-fix** — Fixes code based on reviewer feedback, commits, pushes, and posts a comment
+- **pr-start** — Implements an issue, commits to a new branch, and opens a PR
+- **pr-merge** — Writes a clean commit message and squash merges
+- **gh-respond** — Responds to issue or PR comments
+
+### Core Action
+
+- **run-skill** — The shared core. Injects env vars, determines the correct checkout ref, checks out the repo, sets up Claude CLI + Chrome DevTools + mkcert, gathers context, and runs Claude with the specified skill.
+
+### Building Block Actions
+
+- **inject-env** — Injects all secrets and vars into `GITHUB_ENV`
 - **git-commit-push** — Commits and pushes changes, optionally creating a new branch
-- **post-comment** — Posts a comment to an issue or PR from `/tmp/comment.txt`
-- **create-pr** — Creates a PR with optional issue linking from `/tmp/commit_msg.txt` and `/tmp/comment.txt`
-- **squash-merge** — Squash merges a PR with custom commit message from `/tmp/commit_msg.txt`
-
-### Environment Variable Inheritance
-
-Composite actions automatically inherit environment variables from the job. Set env vars at the job level and they'll be available to all steps, including those in composite actions:
-
-```yaml
-jobs:
-  pr-fix:
-    env:
-      VITE_PROXY_TARGET: ${{ secrets.VITE_PROXY_TARGET }}
-      VITE_HOST: localhost
-    steps:
-      - uses: chriswickett/agentic/.github/actions/run-claude-skill@main
-        # VITE_PROXY_TARGET and VITE_HOST are automatically available
-```
-
-Secrets and tokens must still be passed explicitly as inputs.
+- **post-comment** — Posts a comment to an issue or PR
+- **create-pr** — Creates a PR with optional issue linking
+- **squash-merge** — Squash merges a PR with custom commit message
 
 ## Repo Setup
 
@@ -182,187 +191,32 @@ Before using these workflows with a client repo:
 
 2. **Allow squash merging**: Same section, make sure "Allow squash merging" is ON.
 
-3. **Add workflow files**: Create four workflow files in `.github/workflows/`. All workflows require `@claude` at the start of the triggering comment/review for security.
+3. **Add a workflow file**: Create a single file at `.github/workflows/agentic.yml`:
 
-   `gh-commented.yml` — Responds to issue comments and new issues:
    ```yaml
    on:
      issue_comment:
        types: [created]
      issues:
        types: [opened]
-
-   jobs:
-     gh-respond:
-       if: |
-        (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '@claude') && !startsWith(github.event.comment.body, '@claude /pr-start')) ||
-        (github.event_name == 'issues' && startsWith(github.event.issue.body, '@claude'))
-       runs-on: ubuntu-latest
-       timeout-minutes: 5
-       env:
-         VITE_PROXY_TARGET: ${{ secrets.VITE_PROXY_TARGET }}
-         VITE_HOST: localhost
-       steps:
-         - uses: actions/checkout@v4
-
-         - uses: chriswickett/agentic/.github/actions/setup-claude-agent@main
-
-         - uses: chriswickett/agentic/.github/actions/run-claude-skill@main
-           with:
-             skill-name: gh-respond
-             context-type: issue
-             context-number: ${{ github.event.issue.number }}
-             repository: ${{ github.repository }}
-             claude-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-
-         - uses: chriswickett/agentic/.github/actions/post-comment@main
-           with:
-             comment-file: /tmp/comment.txt
-             issue-or-pr-number: ${{ github.event.issue.number }}
-             comment-type: issue
-             repository: ${{ github.repository }}
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-   ```
-
-   `gh-start-work.yml` — Implements an issue and opens a PR:
-   ```yaml
-   on:
-     issue_comment:
-       types: [created]
-
-   jobs:
-     pr-start:
-       if: "!github.event.issue.pull_request && startsWith(github.event.comment.body, '@claude /pr-start')"
-       runs-on: ubuntu-latest
-       timeout-minutes: 15
-       env:
-         VITE_PROXY_TARGET: ${{ secrets.VITE_PROXY_TARGET }}
-         VITE_HOST: localhost
-       steps:
-         - uses: actions/checkout@v4
-           with:
-             fetch-depth: 0
-
-         - uses: chriswickett/agentic/.github/actions/setup-claude-agent@main
-
-         - uses: chriswickett/agentic/.github/actions/run-claude-skill@main
-           with:
-             skill-name: pr-start
-             context-type: issue
-             context-number: ${{ github.event.issue.number }}
-             repository: ${{ github.repository }}
-             claude-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-
-         - uses: chriswickett/agentic/.github/actions/git-commit-push@main
-           with:
-             branch-name-file: /tmp/pr_branch_name.txt
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-             bot-name: ${{ vars.AGENTIC_BOT_NAME }}
-             bot-email: ${{ vars.AGENTIC_BOT_EMAIL }}
-
-         - uses: chriswickett/agentic/.github/actions/create-pr@main
-           with:
-             issue-number: ${{ github.event.issue.number }}
-             repository: ${{ github.repository }}
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-   ```
-
-   `pr-changes-requested.yml` — Fixes code when reviewer requests changes:
-   ```yaml
-   on:
      pull_request_review:
        types: [submitted]
 
    jobs:
-     pr-fix:
-       if: github.event.review.state == 'changes_requested' && startsWith(github.event.review.body, '@claude')
-       runs-on: ubuntu-latest
-       timeout-minutes: 10
-       env:
-         VITE_PROXY_TARGET: ${{ secrets.VITE_PROXY_TARGET }}
-         VITE_HOST: localhost
-       steps:
-         - uses: actions/checkout@v4
-           with:
-             ref: ${{ github.event.pull_request.head.ref }}
-             fetch-depth: 0
-
-         - uses: chriswickett/agentic/.github/actions/setup-claude-agent@main
-
-         - uses: chriswickett/agentic/.github/actions/run-claude-skill@main
-           with:
-             skill-name: pr-fix
-             context-type: pr
-             context-number: ${{ github.event.pull_request.number }}
-             repository: ${{ github.repository }}
-             claude-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-
-         - uses: chriswickett/agentic/.github/actions/git-commit-push@main
-           with:
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-             bot-name: ${{ vars.AGENTIC_BOT_NAME }}
-             bot-email: ${{ vars.AGENTIC_BOT_EMAIL }}
-
-         - uses: chriswickett/agentic/.github/actions/post-comment@main
-           with:
-             issue-or-pr-number: ${{ github.event.pull_request.number }}
-             comment-type: pr
-             repository: ${{ github.repository }}
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
+     agentic:
+       uses: chriswickett/agentic/.github/workflows/agentic.yml@main
+       secrets: inherit
    ```
 
-   `pr-approved.yml` — Squash merges when reviewer approves:
-   ```yaml
-   on:
-     pull_request_review:
-       types: [submitted]
-
-   jobs:
-     pr-merge:
-       if: github.event.review.state == 'approved' && startsWith(github.event.review.body, '@claude')
-       runs-on: ubuntu-latest
-       timeout-minutes: 5
-       env:
-         VITE_PROXY_TARGET: ${{ secrets.VITE_PROXY_TARGET }}
-         VITE_HOST: localhost
-       steps:
-         - uses: actions/checkout@v4
-           with:
-             ref: ${{ github.event.pull_request.head.ref }}
-             fetch-depth: 0
-
-         - uses: chriswickett/agentic/.github/actions/setup-claude-agent@main
-
-         - uses: chriswickett/agentic/.github/actions/run-claude-skill@main
-           with:
-             skill-name: pr-merge
-             context-type: pr
-             context-number: ${{ github.event.pull_request.number }}
-             repository: ${{ github.repository }}
-             claude-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-
-         - uses: chriswickett/agentic/.github/actions/squash-merge@main
-           with:
-             pr-number: ${{ github.event.pull_request.number }}
-             repository: ${{ github.repository }}
-             github-token: ${{ secrets.AGENTIC_BOT_TOKEN }}
-   ```
+   All routing, filtering, checkout, setup, and env var handling is done by the reusable workflow. Secrets are passed through via `secrets: inherit`. Variables from the `vars` context are available automatically. Any secrets or variables you add in the GitHub UI are injected as env vars at runtime.
 
 4. **Add secrets**: At repo level (Settings → Secrets and variables → Actions) or org level:
    - `CLAUDE_CODE_OAUTH_TOKEN`: OAuth token from `claude setup-token` (uses your Claude Pro/Max subscription)
    - `AGENTIC_BOT_TOKEN`: The bot account's PAT
-   - `VITE_PROXY_TARGET` (optional): For frontend repos that need a proxy to a backend
+   - Any app-specific secrets are automatically injected as env vars
 
 5. **Add variables**: At repo level (Settings → Secrets and variables → Actions → Variables) or org level:
    - `AGENTIC_BOT_NAME`: The bot's GitHub username
    - `AGENTIC_BOT_EMAIL`: The bot's noreply email
-
-## TODO
-
-- Harden and expand the allowed commands list in `bin/bg`
-- Setup script to generate client repo workflow files from agentic
+   - Any app-specific variables are automatically injected as env vars
 
