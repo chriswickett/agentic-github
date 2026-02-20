@@ -1,15 +1,6 @@
 name: GH Respond
 description: Responds to issue or PR comments
 
-inputs:
-  secrets-json:
-    description: 'All secrets as JSON'
-    required: true
-  vars-json:
-    description: 'All vars as JSON'
-    required: false
-    default: '{}'
-
 runs:
   using: composite
   steps:
@@ -29,8 +20,6 @@ runs:
       with:
         skill-name: gh-respond
         context-type: ${{ steps.context.outputs.type }}
-        secrets-json: ${{ inputs.secrets-json }}
-        vars-json: ${{ inputs.vars-json }}
 
     - uses: ./.github/actions/post-comment
       with:

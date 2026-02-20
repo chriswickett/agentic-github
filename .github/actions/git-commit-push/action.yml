@@ -2,6 +2,10 @@ name: Git Commit and Push
 description: Commits changes and pushes to current or new branch
 
 inputs:
+  repo-path:
+    description: 'Path to the client repo'
+    required: false
+    default: '.'
   commit-msg-file:
     description: 'Path to commit message file'
     required: false
@@ -35,6 +39,7 @@ runs:
 
     - name: Configure git
       shell: bash
+      working-directory: ${{ inputs.repo-path }}
       run: |
         git config user.name "${{ inputs.bot-name }}"
         git config user.email "${{ inputs.bot-email }}"
@@ -42,6 +47,7 @@ runs:
     - name: Create new branch (if specified)
       if: inputs.branch-name-file != ''
       shell: bash
+      working-directory: ${{ inputs.repo-path }}
       run: |
         if [[ ! -f "${{ inputs.branch-name-file }}" ]]; then
           echo "::error::Branch name file not found: ${{ inputs.branch-name-file }}"
@@ -52,6 +58,7 @@ runs:
 
     - name: Commit and push
       shell: bash
+      working-directory: ${{ inputs.repo-path }}
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |

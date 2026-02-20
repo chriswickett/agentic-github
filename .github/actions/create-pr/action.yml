@@ -2,6 +2,10 @@ name: Create Pull Request
 description: Creates a PR and optionally comments on the originating issue
 
 inputs:
+  repo-path:
+    description: 'Path to the client repo'
+    required: false
+    default: '.'
   commit-msg-file:
     description: 'Path to commit message file (used for PR title)'
     required: false
@@ -42,6 +46,7 @@ runs:
 
     - name: Create PR
       shell: bash
+      working-directory: ${{ inputs.repo-path }}
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
@@ -63,6 +68,7 @@ runs:
     - name: Comment on issue
       if: inputs.issue-number != ''
       shell: bash
+      working-directory: ${{ inputs.repo-path }}
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |

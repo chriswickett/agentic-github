@@ -1,15 +1,6 @@
 name: PR Fix
 description: Fixes code based on PR review feedback
 
-inputs:
-  secrets-json:
-    description: 'All secrets as JSON'
-    required: true
-  vars-json:
-    description: 'All vars as JSON'
-    required: false
-    default: '{}'
-
 runs:
   using: composite
   steps:
@@ -18,11 +9,10 @@ runs:
         skill-name: pr-fix
         context-type: pr
         fetch-depth: '0'
-        secrets-json: ${{ inputs.secrets-json }}
-        vars-json: ${{ inputs.vars-json }}
 
     - uses: ./.github/actions/git-commit-push
       with:
+        repo-path: repo
         github-token: ${{ env.AGENTIC_BOT_TOKEN }}
         bot-name: ${{ env.AGENTIC_BOT_NAME }}
         bot-email: ${{ env.AGENTIC_BOT_EMAIL }}
