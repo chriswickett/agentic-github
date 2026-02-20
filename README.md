@@ -41,11 +41,11 @@ AGENTIC_BOT_TOKEN="your-bot-pat"
 
 The install script loads `.env` automatically if it exists. The bot's username and noreply email are derived from the token automatically — you only need the two tokens. The file is already in `.gitignore`.
 
-The workflow files are thin callers that reference this repo's composite actions via `uses:`. When the agentic repo's actions are updated, all client repos pick up the changes automatically on the next workflow run.
-
 ### Workflow templates
 
-The templates live in `templates/workflows/` and use a `__AGENTIC_REPO__` placeholder that the install script replaces with this repo's `owner/repo` path:
+The system has two layers: **workflow files** installed into each client repo, and **composite actions** that live in the agentic repo.
+
+The workflow files are thin wiring — they define which GitHub events trigger which actions in which order. The templates live in `templates/workflows/` and use a `__AGENTIC_REPO__` placeholder that the install script replaces with this repo's `owner/repo` path:
 
 | Template | Trigger | What it does |
 |----------|---------|-------------|
@@ -53,6 +53,8 @@ The templates live in `templates/workflows/` and use a `__AGENTIC_REPO__` placeh
 | `gh-start-work.yml` | Issue comment with `@claude /pr-start` | Implements issue, opens PR |
 | `pr-changes-requested.yml` | PR review with changes requested starting with `@claude` | Fixes code, pushes |
 | `pr-approved.yml` | PR review approved starting with `@claude` | Squash merges |
+
+The composite actions are where the real logic lives. Because the workflows reference them at `@main`, every client repo pulls the latest version of each action on every run. You update an action once in the agentic repo, and every client gets the change automatically — no need to re-run the install script or touch the workflow files.
 
 ### Required secrets and variables
 
