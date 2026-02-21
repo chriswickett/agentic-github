@@ -4,6 +4,9 @@ description: Fixes code based on PR review feedback
 runs:
   using: composite
   steps:
+    - shell: bash
+      run: echo "== RUNNING JOB — PR FIX ================"
+
     - uses: ./.github/actions/lib/run-skill
       with:
         skill-name: pr-fix

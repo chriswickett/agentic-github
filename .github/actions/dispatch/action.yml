@@ -13,10 +13,16 @@ inputs:
 runs:
   using: composite
   steps:
+    - shell: bash
+      run: echo "== INJECTING ENVIRONMENT ==============="
+
     - uses: ./.github/actions/lib/inject-env
       with:
         secrets-json: ${{ inputs.secrets-json }}
         vars-json: ${{ inputs.vars-json }}
+
+    - shell: bash
+      run: echo "== ROUTING EVENT ======================="
 
     - id: route
       shell: bash

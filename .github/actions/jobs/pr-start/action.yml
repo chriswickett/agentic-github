@@ -4,6 +4,9 @@ description: Implements a GitHub issue and opens a PR
 runs:
   using: composite
   steps:
+    - shell: bash
+      run: echo "== RUNNING JOB — PR START =============="
+
     - uses: ./.github/actions/lib/run-skill
       with:
         skill-name: pr-start
