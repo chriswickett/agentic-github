@@ -21,6 +21,8 @@ All interactions must start with `@claude` at the beginning of a comment or revi
 | Request fixes | Submit a PR review with "Request changes" starting with `@claude` |
 | Merge a PR | Submit a PR review with "Approve" starting with `@claude` |
 
+You can also use /plan-work locally to have Claude plan a piece of work interactively and then create a GitHub issue.
+
 ## Setup
 
 ### 1. Create a bot account
@@ -79,3 +81,11 @@ jobs:
 
 - Disable auto-merge (Settings > General > Pull Requests)
 - Enable squash merging
+
+### 5. Local skills (optional)
+
+To use skills like `/plan-work` locally in Claude Code, symlink the skills directory:
+
+```bash
+ln -s /path/to/agentic/skills/* ~/.claude/skills/
+```
