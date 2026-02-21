@@ -4,16 +4,15 @@ description: Implements a GitHub issue and opens a PR
 runs:
   using: composite
   steps:
-    - shell: bash
-      run: echo "== RUNNING JOB — PR START =============="
-
-    - uses: ./.github/actions/lib/run-skill
+    - name: Run skill
+      uses: ./.github/actions/lib/run-skill
       with:
         skill-name: pr-start
         context-type: issue
         fetch-depth: '0'
 
-    - uses: ./.github/actions/lib/git-commit-push
+    - name: Commit and push
+      uses: ./.github/actions/lib/git-commit-push
       with:
         repo-path: repo
         branch-name-file: /tmp/pr_branch_name.txt
@@ -21,7 +20,8 @@ runs:
         bot-name: ${{ env.AGENTIC_BOT_NAME }}
         bot-email: ${{ env.AGENTIC_BOT_EMAIL }}
 
-    - uses: ./.github/actions/lib/create-pr
+    - name: Create PR
+      uses: ./.github/actions/lib/create-pr
       with:
         repo-path: repo
         issue-number: ${{ github.event.issue.number }}

@@ -16,9 +16,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - shell: bash
-      run: echo "== DETERMINING REF ====================="
-
     - name: Determine ref
       id: ref
       shell: bash
@@ -35,24 +32,16 @@ runs:
           echo "ref=" >> $GITHUB_OUTPUT
         fi
 
-    - shell: bash
-      run: echo "== CHECKING OUT CLIENT REPO ============"
-
-    - uses: actions/checkout@v4
+    - name: Check out client repo
+      uses: actions/checkout@v4
       with:
         ref: ${{ steps.ref.outputs.ref }}
         fetch-depth: ${{ inputs.fetch-depth }}
         path: repo
 
-    - shell: bash
-      run: echo "== INSTALLING CLAUDE CLI ==============="
-
     - name: Install Claude CLI
       shell: bash
       run: npm install -g @anthropic-ai/claude-code
-
-    - shell: bash
-      run: echo "== INSTALLING DEPENDENCIES ============="
 
     - name: Install dependencies
       shell: bash
@@ -68,9 +57,6 @@ runs:
           yarn install --frozen-lockfile
         fi
 
-    - shell: bash
-      run: echo "== SETTING UP MKCERT ==================="
-
     - name: Setup mkcert for trusted HTTPS
       shell: bash
       run: |
@@ -78,9 +64,6 @@ runs:
         chmod +x mkcert-v*-linux-amd64
         sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
         mkcert -install
-
-    - shell: bash
-      run: echo "== STARTING HEADLESS CHROME ============"
 
     - name: Install and start headless Chrome
       shell: bash
@@ -96,16 +79,10 @@ runs:
           --remote-debugging-address=0.0.0.0 \
           about:blank &
 
-    - shell: bash
-      run: echo "== CONFIGURING CHROME DEVTOOLS MCP ====="
-
     - name: Configure Chrome DevTools MCP
       shell: bash
       run: |
         echo '{"mcpServers":{"chrome-devtools":{"type":"stdio","command":"npx","args":["chrome-devtools-mcp@latest","--browserUrl=http://localhost:9222"]}}}' > ~/.claude.json
-
-    - shell: bash
-      run: echo "== GATHERING CONTEXT ==================="
 
     - name: Gather context
       shell: bash
@@ -118,9 +95,6 @@ runs:
         else
           $SKILLS_DIR/bin/gather-pr-context "$NUMBER" "${{ github.repository }}" > /tmp/context.txt
         fi
-
-    - shell: bash
-      run: echo "== RUNNING CLAUDE WITH SKILL ==========="
 
     - name: Run Claude with skill
       shell: bash

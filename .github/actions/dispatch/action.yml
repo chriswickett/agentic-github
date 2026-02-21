@@ -13,31 +13,31 @@ inputs:
 runs:
   using: composite
   steps:
-    - shell: bash
-      run: echo "== INJECTING ENVIRONMENT ==============="
-
-    - uses: ./.github/actions/lib/inject-env
+    - name: Inject environment
+      uses: ./.github/actions/lib/inject-env
       with:
         secrets-json: ${{ inputs.secrets-json }}
         vars-json: ${{ inputs.vars-json }}
 
-    - shell: bash
-      run: echo "== ROUTING EVENT ======================="
-
-    - id: route
+    - name: Route event
+      id: route
       shell: bash
       run: |
         JOB=$($GITHUB_WORKSPACE/bin/determine-job-from-event)
         [[ -n "$JOB" ]] && echo "job=$JOB" >> $GITHUB_OUTPUT
 
-    - uses: ./.github/actions/jobs/gh-respond
+    - name: Run gh-respond job
+      uses: ./.github/actions/jobs/gh-respond
       if: steps.route.outputs.job == 'gh-respond'
 
-    - uses: ./.github/actions/jobs/pr-start
+    - name: Run pr-start job
+      uses: ./.github/actions/jobs/pr-start
       if: steps.route.outputs.job == 'pr-start'
 
-    - uses: ./.github/actions/jobs/pr-fix
+    - name: Run pr-fix job
+      uses: ./.github/actions/jobs/pr-fix
       if: steps.route.outputs.job == 'pr-fix'
 
-    - uses: ./.github/actions/jobs/pr-merge
+    - name: Run pr-merge job
+      uses: ./.github/actions/jobs/pr-merge
       if: steps.route.outputs.job == 'pr-merge'

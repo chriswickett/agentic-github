@@ -4,16 +4,15 @@ description: Writes clean commit message and squash merges an approved PR
 runs:
   using: composite
   steps:
-    - shell: bash
-      run: echo "== RUNNING JOB — PR MERGE =============="
-
-    - uses: ./.github/actions/lib/run-skill
+    - name: Run skill
+      uses: ./.github/actions/lib/run-skill
       with:
         skill-name: pr-merge
         context-type: pr
         fetch-depth: '0'
 
-    - uses: ./.github/actions/lib/squash-merge
+    - name: Squash merge
+      uses: ./.github/actions/lib/squash-merge
       with:
         pr-number: ${{ github.event.pull_request.number }}
         repository: ${{ github.repository }}

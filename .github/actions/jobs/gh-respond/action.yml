@@ -4,9 +4,6 @@ description: Responds to issue or PR comments
 runs:
   using: composite
   steps:
-    - shell: bash
-      run: echo "== RUNNING JOB — GH RESPOND ============"
-
     - name: Determine context type
       id: context
       shell: bash
@@ -19,12 +16,14 @@ runs:
           echo "type=issue" >> $GITHUB_OUTPUT
         fi
 
-    - uses: ./.github/actions/lib/run-skill
+    - name: Run skill
+      uses: ./.github/actions/lib/run-skill
       with:
         skill-name: gh-respond
         context-type: ${{ steps.context.outputs.type }}
 
-    - uses: ./.github/actions/lib/post-comment
+    - name: Post comment
+      uses: ./.github/actions/lib/post-comment
       with:
         issue-number: ${{ github.event.issue.number }}
         repository: ${{ github.repository }}
