@@ -69,7 +69,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: chriswickett/agentic
+          repository: chriswickett/agentic-github
 
       - uses: ./.github/actions/dispatch
         with:
