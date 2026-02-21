@@ -4,13 +4,13 @@ description: Writes clean commit message and squash merges an approved PR
 runs:
   using: composite
   steps:
-    - uses: ./.github/actions/run-skill
+    - uses: ./.github/actions/lib/run-skill
       with:
         skill-name: pr-merge
         context-type: pr
         fetch-depth: '0'
 
-    - uses: ./.github/actions/squash-merge
+    - uses: ./.github/actions/lib/squash-merge
       with:
         pr-number: ${{ github.event.pull_request.number }}
         repository: ${{ github.repository }}

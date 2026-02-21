@@ -16,12 +16,12 @@ runs:
           echo "type=issue" >> $GITHUB_OUTPUT
         fi
 
-    - uses: ./.github/actions/run-skill
+    - uses: ./.github/actions/lib/run-skill
       with:
         skill-name: gh-respond
         context-type: ${{ steps.context.outputs.type }}
 
-    - uses: ./.github/actions/post-comment
+    - uses: ./.github/actions/lib/post-comment
       with:
         issue-number: ${{ github.event.issue.number }}
         repository: ${{ github.repository }}
