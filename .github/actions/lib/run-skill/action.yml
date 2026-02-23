@@ -64,6 +64,7 @@ runs:
         chmod +x mkcert-v*-linux-amd64
         sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
         mkcert -install
+        echo "NODE_EXTRA_CA_CERTS=$(mkcert -CAROOT)/rootCA.pem" >> $GITHUB_ENV
 
     - name: Install and start headless Chrome
       shell: bash
