@@ -60,17 +60,17 @@ runs:
     - name: Setup mkcert for trusted HTTPS
       shell: bash
       run: |
-        curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+        curl -sSJLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
         chmod +x mkcert-v*-linux-amd64
         sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
-        mkcert -install
+        mkcert -install 2>/dev/null
         echo "NODE_EXTRA_CA_CERTS=$(mkcert -CAROOT)/rootCA.pem" >> $GITHUB_ENV
 
     - name: Install and start headless Chrome
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable || sudo apt-get install -y chromium-browser
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq google-chrome-stable 2>/dev/null || sudo apt-get install -y -qq chromium-browser 2>/dev/null
         CHROME_BIN=$(command -v google-chrome || command -v chromium-browser)
         $CHROME_BIN \
           --headless=new \
@@ -78,7 +78,7 @@ runs:
           --disable-dev-shm-usage \
           --remote-debugging-port=9222 \
           --remote-debugging-address=0.0.0.0 \
-          about:blank &
+          about:blank 2>/dev/null &
 
     - name: Configure Chrome DevTools MCP
       shell: bash

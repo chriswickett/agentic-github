@@ -18,10 +18,6 @@ runs:
         SECRETS_JSON: ${{ inputs.secrets-json }}
         VARS_JSON: ${{ inputs.vars-json }}
       run: |
-        echo "::group::inject-env debug"
-        echo "Vars keys: $(echo "$VARS_JSON" | jq -r 'keys | join(", ")')"
-        echo "Secrets keys: $(echo "$SECRETS_JSON" | jq -r 'keys | join(", ")')"
-        echo "::endgroup::"
         echo "$VARS_JSON" | jq -r 'to_entries[] | "\(.key)<<EOF\n\(.value)\nEOF"' >> $GITHUB_ENV
         echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)<<EOF\n\(.value)\nEOF"' >> $GITHUB_ENV
         BOT_TOKEN=$(echo "$SECRETS_JSON" | jq -r '.AGENTIC_BOT_TOKEN // empty')
