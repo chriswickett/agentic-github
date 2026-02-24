@@ -28,7 +28,11 @@ Before writing ANY files, check if the repo has tests. Look for test directories
 **IF no tests are present:**
 - Skip this step and proceed to write the commit message
 
-**IF tests are present, run them and check the exit code:**
+**IF tests are present:**
+
+Run the full test suite by default. Only skip specific test suites if the project's CLAUDE.md explicitly says to. Do not assume certain tests won't run or can be excluded. The golden rule: if tests are present, every test of every type must pass.
+
+Run them and check the exit code:
 
 **Exit code 0 (all tests passed):**
 - Write comment.txt explaining that all tests passed and the PR will be merged
