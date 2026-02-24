@@ -49,9 +49,15 @@ Once you have enough context, summarise the plan briefly and ask:
 
 "Want me to create a GitHub issue for this?"
 
-### 5. Create the GitHub issue
+### 5. Account selection
+
+Before creating the issue, check for an `AGENTIC_BOT_TOKEN` variable in `.env` or `.env.local` in the client repo root (the current working directory, not the agentic-github repo). If the token is present, ask the user whether they want to create the issue as themselves or as the bot account. If no token is found, skip this step and use the default `gh` auth.
+
+### 6. Create the GitHub issue
 
 Use `gh issue create` to create the issue. The repo is determined from the current git remote (`gh` will pick it up automatically, or the user may specify).
+
+If the user chose the bot account, pass the token per-command: `GITHUB_TOKEN=$AGENTIC_BOT_TOKEN gh issue create ...`. Do not export the variable or set it permanently.
 
 The issue title should be a concise summary prefixed with a type label, e.g. `feat: Add signup button` or `fix: Header overflow on mobile`.
 
@@ -74,6 +80,6 @@ The issue will be executed by an intelligent agent that **cannot ask questions**
 
 The goal: an intelligent agent should be able to implement without asking "how do we do X in this codebase?" because they can see examples of X already being done.
 
-### 6. Output
+### 7. Output
 
 After creating the issue, display the issue URL so the user can review it. Let them know they can trigger implementation by commenting `@claude /pr-start` on the issue.
