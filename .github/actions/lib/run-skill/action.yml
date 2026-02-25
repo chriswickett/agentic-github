@@ -85,6 +85,10 @@ runs:
       run: |
         echo '{"mcpServers":{"chrome-devtools":{"type":"stdio","command":"npx","args":["chrome-devtools-mcp@latest","--browserUrl=http://localhost:9222"]}}}' > ~/.claude.json
 
+    - name: Apply skill overrides
+      shell: bash
+      run: $GITHUB_WORKSPACE/bin/apply-skill-overrides
+
     - name: Gather context
       shell: bash
       run: |

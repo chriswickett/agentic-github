@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Clones a skill overrides repo and copies all skills over the defaults.
+# Requires AGENTIC_SKILLS_REPO and AGENTIC_BOT_TOKEN env vars.
+# Usage: apply-skill-overrides
+
+if [[ -z "${AGENTIC_SKILLS_REPO:-}" ]]; then
+  exit 0
+fi
+
+REPO_PATH="${AGENTIC_SKILLS_REPO}"
+
+# Split into org/repo and optional subdirectory
+IFS='/' read -r ORG REPO REST <<< "$REPO_PATH"
+CLONE_REPO="${ORG}/${REPO}"
+SUBDIR="${REST:-skills}"
+
+echo "Cloning skill overrides from $CLONE_REPO (path: $SUBDIR)"
+git clone --depth 1 "https://x-access-token:${AGENTIC_BOT_TOKEN}@github.com/${CLONE_REPO}.git" /tmp/skill-overrides
+
+OVERRIDES_DIR="/tmp/skill-overrides/${SUBDIR}"
+if [[ -d "$OVERRIDES_DIR" ]]; then
+  for skill_dir in "$OVERRIDES_DIR"/*/; do
+    skill_name=$(basename "$skill_dir")
+    if [[ -f "${skill_dir}SKILL.md" ]]; then
+      echo "Overriding skill: $skill_name"
+      mkdir -p "$GITHUB_WORKSPACE/skills/${skill_name}"
+      cp -r "$skill_dir"* "$GITHUB_WORKSPACE/skills/${skill_name}/"
+    fi
+  done
+else
+  echo "No skills directory found at $OVERRIDES_DIR"
+fi

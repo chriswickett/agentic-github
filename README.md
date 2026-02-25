@@ -45,6 +45,7 @@ Add these as repo or org-level variables:
 | `AGENTIC_BOT_USERNAME` | The bot's GitHub username |
 | `AGENTIC_BOT_NAME` | Display name for git commits |
 | `AGENTIC_BOT_EMAIL` | The bot's noreply email |
+| `AGENTIC_SKILLS_REPO` | (Optional) Override skills from a repo, e.g. `org/repo` or `org/repo/path/to/skills` |
 
 Add the bot account as a collaborator with write access.
 
@@ -89,3 +90,26 @@ To use skills like `/plan-work` locally in Claude Code, symlink the skills direc
 ```bash
 ln -s /path/to/agentic/skills/* ~/.claude/skills/
 ```
+
+## Custom skills
+
+The built-in skills (`gh-respond`, `pr-start`, `pr-fix`, `pr-merge`) define how Claude behaves during each workflow step. You can override any of them to change that behaviour — for example, to enforce your team's commit message conventions, add project-specific validation steps, or change how PRs are structured.
+
+To override a skill, create a `SKILL.md` file with the same name in a separate GitHub repo. Set the `AGENTIC_SKILLS_REPO` variable on the client repo to point to it:
+
+- `org/my-skills` — looks for skills in the `skills/` directory at the repo root
+- `org/my-skills/path/to/skills` — looks in a subdirectory
+
+The repo can be private — it's cloned using the bot account's PAT.
+
+The directory structure should mirror agentic-github's `skills/` layout:
+
+```
+skills/
+  pr-start/
+    SKILL.md    # overrides the default pr-start skill
+  gh-respond/
+    SKILL.md    # overrides the default gh-respond skill
+```
+
+You can override any built-in skill (including `/commit`) or add entirely new skills of your own. Only skills with matching names are overridden — anything without a match uses the default.
