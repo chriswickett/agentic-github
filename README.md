@@ -8,7 +8,10 @@ This is a system for getting Claude to do work for you in GitHub, all on the clo
 - All GitHub Actions secrets and variables are injected as environment variables, so Claude has access to every secret and variable configured on the repo
 - The bot account's PAT is currently a classic token, which grants access to all repos the account can access
 
-Make sure you are comfortable with all three of these before using.
+- Fork PRs are blocked: if a PR originates from a fork, the workflow refuses to run. Without this, a forked repo could inject malicious code (e.g. in `CLAUDE.md` hooks or any script) that executes with access to your secrets
+- Any code in the checked-out repo can read environment variables, including secrets. This applies to `CLAUDE.md` hooks, pre-commit hooks, scripts Claude is asked to run, and any process spawned on the runner
+
+Make sure you are comfortable with all of these before using.
 
 ## Usage
 

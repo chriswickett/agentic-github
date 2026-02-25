@@ -16,6 +16,22 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Block fork PRs
+      shell: bash
+      run: |
+        EVENT=$(cat "$GITHUB_EVENT_PATH")
+        if [[ "${{ inputs.context-type }}" == "pr" ]]; then
+          HEAD_REPO=$(echo "$EVENT" | jq -r '.pull_request.head.repo.full_name // empty')
+          if [[ -z "$HEAD_REPO" ]]; then
+            PR_NUMBER=$(echo "$EVENT" | jq -r '.issue.number')
+            HEAD_REPO=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json headRepositoryOwner,headRepository -q '"\(.headRepositoryOwner.login)/\(.headRepository.name)"')
+          fi
+          if [[ -n "$HEAD_REPO" && "$HEAD_REPO" != "${{ github.repository }}" ]]; then
+            echo "::error::Refusing to run on fork PR from $HEAD_REPO"
+            exit 1
+          fi
+        fi
+
     - name: Determine ref
       id: ref
       shell: bash
