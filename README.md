@@ -94,6 +94,20 @@ To use skills like `/plan-work` locally in Claude Code, symlink the skills direc
 ln -s /path/to/agentic/skills/* ~/.claude/skills/
 ```
 
+## Client setup
+
+If your project needs additional setup before Claude runs, create `.github/client-setup.yml` in your repo:
+
+```yaml
+steps:
+  - name: Install dependencies
+    run: pip install -r requirements.txt
+  - name: Seed database
+    run: python manage.py seed --env=test
+```
+
+Each step's `run` command executes in the repo root with all env vars available. The file is optional — if it doesn't exist, this step is skipped.
+
 ## Custom skills
 
 The built-in skills (`gh-respond`, `pr-start`, `pr-fix`, `pr-merge`) define how Claude behaves during each workflow step. You can override any of them to change that behaviour — for example, to enforce your team's commit message conventions, add project-specific validation steps, or change how PRs are structured.
