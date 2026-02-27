@@ -15,7 +15,9 @@ route() {
   [[ "$GITHUB_EVENT_NAME" == "issue_comment" ]] && {
     body=$(echo "$EVENT" | jq -r '.comment.body')
     is_pr=$(echo "$EVENT" | jq -r '.issue.pull_request // empty')
-    [[ "$body" == @claude\ /pr-start* && -z "$is_pr" ]] && echo "pr-start" && return
+    if [[ "$body" == @claude\ /pr-start* && -z "$is_pr" ]]; then
+      echo "pr-start" && return
+    fi
     [[ "$body" == @claude* ]] && echo "gh-respond" && return
     return
   }
