@@ -54,6 +54,7 @@ runs:
         ref: ${{ steps.ref.outputs.ref }}
         fetch-depth: ${{ inputs.fetch-depth }}
         path: repo
+        token: ${{ env.AGENTIC_BOT_TOKEN }}
 
     - name: Install Claude CLI
       shell: bash
